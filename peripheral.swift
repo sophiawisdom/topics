@@ -6,7 +6,7 @@ class Wow: NSObject, CBPeripheralManagerDelegate {
     var peripheralManager: CBPeripheralManager!
     var peripheral: CBPeripheral!
     
-    func start() {
+    func init() {
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
         let advertisementData = [CBAdvertisementDataLocalNameKey: "Test Device"]
         peripheralManager.startAdvertising(advertisementData)
