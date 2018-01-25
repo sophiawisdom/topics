@@ -8,6 +8,7 @@ class CentralBoye: NSObject, CBCentralManagerDelegate {
     
     
     override init() {
+        print("Begun init sequence for CentralBoye")
         super.init()
         centralManager = CBCentralManager(delegate:self, queue:nil)
         let service_uuid = CBUUID(string: "a495ff20-c5b1-4b44-b512-1370f02d74de")
