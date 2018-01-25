@@ -5,6 +5,7 @@
 //  Created by Will Weinstein on 1/8/18.
 //  Copyright © 2018 Will Weinstein. All rights reserved.
 //
+/* Mostly "inspired" by https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2 */
 
 import Foundation
 import CoreBluetooth
