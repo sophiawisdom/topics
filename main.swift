@@ -1,3 +1,3 @@
 import Foundation
-print("hi")
-//var thing = Wow()
+print("testing")
+var thing = Wow()
