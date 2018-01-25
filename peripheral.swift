@@ -46,9 +46,4 @@ class Wow: NSObject, CBPeripheralManagerDelegate {
 }
 
 
-var thingy = Wow()
-
-while(true) {
-    
-}
 
