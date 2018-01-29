@@ -4,7 +4,8 @@ import CoreBluetooth
 
 class CentralMan: NSObject, CBCentralManagerDelegate {
     var centralManager: CBCentralManager!
-    var peripheral: CBPeripheral!
+//    var peripheral: CBPeripheral!
+    var known_peripherals = [CBPeripheral]() // List of all peripherals we've encountered
     
     
     override init() {
@@ -24,5 +25,3 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("peripheral: \(peripheral)")
     }
 }
-
-var cls = CentralBoye()

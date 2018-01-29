@@ -2,15 +2,15 @@
 #
 # usage: make [CONFIG=debug|release]
 
-MODULE_NAME = tool
+MODULE_NAME = topics
 SDK         = macosx
 ARCH        = x86_64
 
 CONFIG     ?= debug
 
 ROOT_DIR    = $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-OUTPUT_DIR  = $(ROOT_DIR)/bin
-TARGET_DIR  = $(OUTPUT_DIR)/$(SDK)/$(CONFIG)
+OUTPUT_DIR  = $(ROOT_DIR)
+TARGET_DIR  = $(OUTPUT_DIR)
 SRC_DIR     = $(ROOT_DIR)/src
 
 ifeq ($(CONFIG), debug)
@@ -25,8 +25,12 @@ SDK_PATH    = $(shell xcrun --show-sdk-path --sdk $(SDK))
 SWIFT_FILES = $(wildcard $(SRC_DIR)/*.swift)
 
 build:
+	echo $(ROOT_DIR)
+	echo $(TARGET_DIR)
+	echo $(SDK_PATH)
+	echo $(MODULE_NAME)
 	mkdir -p $(TARGET_DIR)
-	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -module-name $(MODULE_NAME) -emit-module -emit-module-path $(TARGET_DIR)/$(MODULE_NAME).swiftmodule -o $(TARGET_DIR)/$(MODULE_NAME)
+	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(MODULE_NAME)
 
 clean:
 	rm -rf $(TARGET_DIR)
