@@ -19,7 +19,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("state: \(central.state)")
     }
     func centralManager(central: CBCentralManager,
-                        didDiscover peripheral: CBPeripheral,
+                        didDiscoverPeripheral peripheral: CBPeripheral,
                         advertisementData: [String : Any],
                         RSSI: NSNumber){ // Receives result of peripheral scan
         print("peripheral: \(peripheral)")
