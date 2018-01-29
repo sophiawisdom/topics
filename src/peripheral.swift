@@ -3,7 +3,7 @@
 import Foundation
 import CoreBluetooth
 
-class Wow: NSObject, CBPeripheralManagerDelegate {
+class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     var peripheralManager: CBPeripheralManager!
     
     override init() {
