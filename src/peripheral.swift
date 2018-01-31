@@ -24,7 +24,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         peripheralManager.add(someService)
         peripheralManager.startAdvertising(advertisementData)
         
-        print("Ready to go")
+        print("Peripheral has started advertising")
 
     }
 

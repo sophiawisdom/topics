@@ -2,7 +2,7 @@
 #
 # usage: make [CONFIG=debug|release]
 
-MODULE_NAME = topics
+FILE       ?= topics
 SDK         = macosx
 ARCH        = x86_64
 
@@ -26,7 +26,7 @@ SWIFT_FILES = $(wildcard $(SRC_DIR)/*.swift)
 
 build:
 	mkdir -p $(TARGET_DIR)
-	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(MODULE_NAME)
+	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(FILE)
 
 clean:
 	rm -rf $(TARGET_DIR)
