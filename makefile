@@ -26,7 +26,7 @@ SWIFT_FILES = $(wildcard $(SRC_DIR)/*.swift)
 
 build:
 	mkdir -p $(TARGET_DIR)
-	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(FILE)
+	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(FILE).out
 
 clean:
 	rm -rf $(TARGET_DIR)
