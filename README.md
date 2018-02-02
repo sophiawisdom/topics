@@ -1,2 +1,2 @@
 # topics
-hi
+Bluetooth chat relay server

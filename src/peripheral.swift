@@ -24,7 +24,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         peripheralManager.add(someService)
         peripheralManager.startAdvertising(advertisementData)
         
-        print("Peripheral has started advertising")
+        print("Peripheral should have started advertising")
 
     }
 
@@ -34,7 +34,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
 
 
-    func peripheralManagerDidStartAdvertising(_ error:NSError?)
+    func peripheralManagerDidStartAdvertising(_ error: NSError?)
     {
         if let error = error {
             print("Failed… error: \(error)")
