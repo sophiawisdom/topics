@@ -2,6 +2,7 @@ import Foundation
 import CoreBluetooth
 
 let periph_man = PeripheralMan()
+let central_man = CentralMan()
 usleep(500000)
 var queue: DispatchQueue!
 if #available(OSX 10.10, *) {
@@ -10,6 +11,8 @@ if #available(OSX 10.10, *) {
     print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
 }
 periph_man.peripheralManager = CBPeripheralManager(delegate: periph_man, queue: queue)
+central_man.centralManager = CBCentralManager(delegate: central_man, queue: queue)
+
 
 let properties: CBCharacteristicProperties = [.notify, .read, .write]
 let permissions: CBAttributePermissions = [.readable, .writeable]
@@ -36,6 +39,9 @@ if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what st
         print("Peripheral Manager has begun advertising")
     }
     
+}
+if(central_man.centralManager.state == .poweredOn) {
+    central_man.centralManager.scanForPeripherals(withServices: nil, options: nil)
 }
 else {
     print("PeripheralManager state is not powered on. Perhaps your bluetooth is off.")

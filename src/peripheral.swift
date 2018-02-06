@@ -17,6 +17,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager,
                                              error: Error?)
     {
+        print("Peripheral Manager state changed. This is probably good.")
         if let error = error {
             print("Failed… error: \(error)")
             return
