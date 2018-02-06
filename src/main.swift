@@ -1,6 +1,7 @@
 import Foundation
 import CoreBluetooth
 
+<<<<<<< HEAD
 let periph_man = PeripheralMan()
 let central_man = CentralMan()
 usleep(500000)
@@ -46,6 +47,9 @@ if(central_man.centralManager.state == .poweredOn) {
 else {
     print("PeripheralManager state is not powered on. Perhaps your bluetooth is off.")
 }
+=======
+start_advertising(periph_man: PeripheralMan())
+>>>>>>> cca6293938d3fd416531d2782a3fd52945fad97d
 while (true){
     usleep(10000)
 }
