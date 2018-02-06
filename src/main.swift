@@ -21,30 +21,25 @@ let someService = CBMutableService(type:serviceUUID, primary:true)
 someService.characteristics = [someCharacteristic]
 let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : "JasonChase", CBAdvertisementDataServiceUUIDsKey : ["a495ff20-c5b1-4b44-b512-1370f02d74de"]]// probably the right format, thank apple for their definitely helpful documentation
 
-
-
-
-
-while (true){
-    usleep(1000000)
-    switch(periph_man.peripheralManager.state) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
-    case .poweredOn:
-        print("on")
-        print("advertising: \(periph_man.peripheralManager.isAdvertising)")
-        if(!periph_man.peripheralManager.isAdvertising) {
-            periph_man.peripheralManager.add(someService)
-            periph_man.peripheralManager.startAdvertising(advertisementData)
+if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
+    if(!periph_man.peripheralManager.isAdvertising) {
+        periph_man.peripheralManager.add(someService)
+        periph_man.peripheralManager.startAdvertising(advertisementData)
+        while (!periph_man.peripheralManager.isAdvertising){
+            usleep(10000)
         }
-    case .poweredOff:
-        print("off")
-    case .resetting:
-        print("resetting")
-    case .unauthorized:
-        print("unauthorized")
-    case .unknown:
-        print("unknown")
-    default:
-        print("spooky")
     }
+    if (!periph_man.peripheralManager.isAdvertising){
+        print("Something went wrong. Peripheral manager is not advertising.")
+    }
+    else{
+        print("Peripheral Manager has begun advertising")
+    }
+    
 }
-
+else {
+    print("Some weird shit happened. Peripheral Manager state is \(periph_man.peripheralManager.state)")
+}
+while (true){
+    usleep(10000)
+}
