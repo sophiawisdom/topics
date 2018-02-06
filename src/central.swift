@@ -17,7 +17,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("CentralMan init sequence completed, now scanning for peripherals.")
     }
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("state: \(central.state)")
+        print("Central Manager : \(central.state)")
     }
     func centralManager(didDiscover peripheral: CBPeripheral,
                         advertisementData: [String : Any],

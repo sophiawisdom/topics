@@ -37,3 +37,5 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
 
 
 
+
+

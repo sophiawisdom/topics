@@ -7,7 +7,7 @@ var queue: DispatchQueue!
 if #available(OSX 10.10, *) {
     queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
 } else {
-    print("Update your OS??")
+    print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
 }
 periph_man.peripheralManager = CBPeripheralManager(delegate: periph_man, queue: queue)
 
@@ -38,7 +38,7 @@ if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what st
     
 }
 else {
-    print("Some weird shit happened. Peripheral Manager state is \(periph_man.peripheralManager.state)")
+    print("PeripheralManager state is not powered on. Perhaps your bluetooth is off.")
 }
 while (true){
     usleep(10000)
