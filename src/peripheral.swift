@@ -17,11 +17,11 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager,
                                              error: Error?)
     {
-        print("Peripheral Manager state changed. This is probably good.")
         if let error = error {
             print("Failed… error: \(error)")
             return
         }
+        print("Peripheral Manager has started advertising")
     }
 
     func peripheralManager(peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?)
@@ -50,12 +50,6 @@ func start_advertising(periph_man: PeripheralMan!){
     while (!(periph_man.peripheralManager.state == .poweredOn)){
         usleep(1000)
     }
-    if (periph_man.peripheralManager.state == .poweredOn){
-        print("Peripheral manager powered on")
-    }
-    else {
-        print("Peripheral manager not powered on")
-    }
     
     let properties: CBCharacteristicProperties = [.notify, .read, .write]
     let permissions: CBAttributePermissions = [.readable, .writeable]
@@ -77,10 +71,7 @@ func start_advertising(periph_man: PeripheralMan!){
         }
         if (!periph_man.peripheralManager.isAdvertising){
             print("Something went wrong. Peripheral manager is not advertising.")
-        }
-        else{
-            print("Peripheral Manager has begun advertising")
-        }
+        } // Expect it to be advertising
         
     }
     else {
