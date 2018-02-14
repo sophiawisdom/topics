@@ -8,6 +8,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var del: PeripheralDelegate!
     var knownPeripherals = [CBPeripheral]() // List of all peripherals we've encountered
     var peripheralMsgCharacteristics = [String: CBCharacteristic]() // Map between peripherals we've encountered and their msg characteristics
+    let messageServiceUUID = CBUUID(string: "0x1800")
     
     override init() {
         super.init()
@@ -18,9 +19,15 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("Central Manager state has changed. This is probably good.")
     }
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
-        let name = advertisementData[CBAdvertisementDataLocalNameKey]
-        if (name == nil){
-            print("No name!")
+        let UUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] as! String
+        
+        print("Discovered peripheral with UUID \(UUID)")
+        if (UUID == "hello"){
+            print("Attempting to connect to known UUID")
+        }
+        else {
+            print("UUID unknown. No connection made")
+            return
         }
         centralManager.connect(didDiscover, options: nil)
         
@@ -32,7 +39,19 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {
         print("connected")
+        
         didConnect.discoverServices(nil)
+        print("Started to discover services")
+        sleep(500000)
+        var have_message_service = false
+        for service in peripheral.services! {
+            print("Service discovered on peripheral: \(service)")
+            if (service == messageServiceUUID){
+                have_message_service = true
+                print("Found message service UUID on peripheral")
+            }
+        }
+        
     }
     
     func sendMessage(_ central: CBCentralManager,peripheral: CBPeripheral, messageText: String){
