@@ -14,8 +14,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
     
 
-    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager,
-                                             error: Error?)
+    func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager error: Error?)
     {
         if let error = error {
             print("Failed… error: \(error)")
@@ -32,6 +31,11 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         }
 
         print("service: \(service)")
+    }
+    
+    func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) {
+        print("Value: \(didReceiveWrite[0].value)")
+        peripheralManager.respond(to: didReceiveWrite[0], withResult: CBATTError.Code.success)
     }
 
 }
