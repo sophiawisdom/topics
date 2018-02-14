@@ -57,8 +57,8 @@ func start_advertising(periph_man: PeripheralMan!){
     
     let properties: CBCharacteristicProperties = [.notify, .read, .write]
     let permissions: CBAttributePermissions = [.readable, .writeable]
-    let standInUUID = CBUUID(string: "00001801-0000-1000-8000-00805f9b34fb") //these UUIDS probably need to be changed
-    let serviceUUID = CBUUID(string: "a495ff20-c5b1-4b44-b512-1370f02d74de")
+    let standInUUID = CBUUID(string: "0x1800") //these UUIDS probably need to be changed
+    let serviceUUID = CBUUID(string: "0x1800")
     let someCharacteristic = CBMutableCharacteristic(type: standInUUID, properties: properties, value: nil, permissions: permissions)
     let someService = CBMutableService(type:serviceUUID, primary:true)
     
