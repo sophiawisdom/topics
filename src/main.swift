@@ -7,7 +7,7 @@ let periphMan = PeripheralMan()
 start_advertising(periph_man:periphMan)
 
 
-let standInUUID = CBUUID(string: "00001801-0000-1000-8000-00805f9b34fb")
+let standInUUID = CBUUID(string: "0x1800")
 //var ids: [CBUUID] = [standInUUID]
 
 if(central_man.centralManager.state == .poweredOn) {
