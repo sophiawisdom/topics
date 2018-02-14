@@ -18,7 +18,10 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("Central Manager state has changed. This is probably good.")
     }
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
-        
+        let name = advertisementData[CBAdvertisementDataLocalNameKey]
+        if (name == nil){
+            print("No name!")
+        }
         centralManager.connect(didDiscover, options: nil)
         
         didDiscover.delegate = del
@@ -34,9 +37,9 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     
     func sendMessage(_ central: CBCentralManager,peripheral: CBPeripheral, messageText: String){
         // Do the peripheral objects keep a record of what characteristics we need?
-        let data = messageText.data(using: .utf8) // When sending messages we need the type to be a byte buffer
+        let data = messageText.data(using: .utf8)! // When sending messages we need the type to be a byte buffer
         let characteristic = peripheralMsgCharacteristics[peripheral.name!]
-        peripheral.writeValue(data!, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
+        peripheral.writeValue(data, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
         
     }
     
