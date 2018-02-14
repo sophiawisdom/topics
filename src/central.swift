@@ -36,7 +36,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         // Do the peripheral objects keep a record of what characteristics we need?
         let data = messageText.data(using: .utf8) // When sending messages we need the type to be a byte buffer
         let characteristic = peripheralMsgCharacteristics[peripheral.name!]
-        peripheral.writeValue(data!, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
+        peripheral.writeValue(data!, for3: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
         
     }
     
