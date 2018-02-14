@@ -6,7 +6,8 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
     var del: PeripheralDelegate!
-    var known_peripherals = [CBPeripheral]() // List of all peripherals we've encountered
+    var knownPeripherals = [CBPeripheral]() // List of all peripherals we've encountered
+    var peripheralMsgCharacteristics = [String: CBCharacteristic]() // Map between peripherals we've encountered and their msg characteristics
     
     override init() {
         super.init()
@@ -23,12 +24,20 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         didDiscover.delegate = del
         
         
-        known_peripherals.append(didDiscover)
+        knownPeripherals.append(didDiscover)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {
         print("connected")
         didConnect.discoverServices(nil)
+    }
+    
+    func sendMessage(_ central: CBCentralManager,peripheral: CBPeripheral, messageText: String){
+        // Do the peripheral objects keep a record of what characteristics we need?
+        let data = messageText.data(using: .utf8) // When sending messages we need the type to be a byte buffer
+        let characteristic = peripheralMsgCharacteristics[peripheral.name!]
+        peripheral.writeValue(data!, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
+        
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect: CBPeripheral, error: Error?) {
