@@ -1,4 +1,4 @@
-d/* Mostly "inspired" by https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2 */
+/* Mostly "inspired" by https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2 */
 import Foundation
 import CoreBluetooth
 
@@ -6,7 +6,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
     var del: PeripheralDelegate!
-    var knownPeripherals = [CBPeripheral]() // List of all peripherals we've encountered
+    var connectedUsers = [CBPeripheral]() // List of all peripherals we've encountered
     var peripheralMsgCharacteristics = [String: CBCharacteristic]() // Map between peripherals we've encountered and their msg characteristics
     let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
     let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
@@ -45,7 +45,12 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             }
         }
         else {
-            print("Found peripheral without name or UUID. No connection attempted.")
+            if #available(OSX 10.13,*){
+                print("\(didDiscover.identifier)")
+            }
+            else{
+                print("\(didDiscover)")
+            }
         }
         if should_connect == false {
             return
@@ -56,7 +61,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         
         centralManager.connect(didDiscover, options: nil)
         
-        knownPeripherals.append(didDiscover)
+        connectedUsers.append(didDiscover) // This person has either a good UUID or good name, so
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {
