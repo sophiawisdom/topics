@@ -19,22 +19,34 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("Central Manager state has changed. This is probably good.")
     }
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
-        print("diddiscover called")
+        var should_connect = false
         if let BUUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
             switch BUUID {
             case "hello" as String:
-                print("Got em")
+                print("Found peripheral with BUUID 'hello'. Connecting.")
+                should_connect = true
+            case is String:
+                print("UUID \(BUUID) found")
             default:
-                print("ServiceUUIDS other than 'hello'")
+                print("Service UUID that is not string found: \(BUUID)")
             }
         }
         else if let name = advertisementData[CBAdvertisementDataLocalNameKey] {
             switch name {
-            case "JasonChase" as String:
-                print("Found Local Name Jason Chase")
+            case "JasonChasez" as String:
+                print("Found JasonChasez. Attempting to connect.")
+                should_connect = true
+            case is String:
+                print("Found peripheral named \(name). Not connecting.")
             default:
-                print("Found peripheral without UUIDS and with name but name not Jason Chase. Name was bad")
+                print("Somehow found name that is not string.")
             }
+        }
+        else {
+            print("Found peripheral without name or UUID. No connection attempted.")
+        }
+        if should_connect == false {
+            return
         }
         
         
@@ -42,45 +54,12 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         
         centralManager.connect(didDiscover, options: nil)
         
-        
-        
-        
         knownPeripherals.append(didDiscover)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {
-        print("Connected to peripheral")
         didConnect.delegate = del
         didConnect.discoverServices(nil)
-        var num_waits = 0
-        while didConnect.services == nil{
-            usleep(1000)
-            num_waits += 1
-            if (num_waits > 1 && (num_waits%1000 == 0)){
-                print("Waiting for didConnect.services to be non-nil")
-            }
-        }
-        var have_message_service = false
-        print("Peripheral has \(didConnect.services!.count) services")
-        for service in didConnect.services! {
-            print("Service discovered on peripheral: \(service)")
-            if (service.uuid == messageServiceUUID){
-                have_message_service = true
-                print("Found message service UUID on peripheral")
-            }
-        }
-        if (have_message_service == true){
-            
-        }
-        
-    }
-    
-    func sendMessage(_ central: CBCentralManager,peripheral: CBPeripheral, messageText: String){
-        // Do the peripheral objects keep a record of what characteristics we need?
-        let data = messageText.data(using: .utf8)! // When sending messages we need the type to be a byte buffer
-        let characteristic = peripheralMsgCharacteristics[peripheral.name!]
-        peripheral.writeValue(data, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
-        
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect: CBPeripheral, error: Error?) {
@@ -100,9 +79,18 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?)
     {
-        print("peripheral func")
-        let services = peripheral.services
-        print("Found \(services!.count) services! :\(services!) for peripheral \(peripheral)")
+        if (peripheral.name != nil){
+            print("Services have been found for peripheral \(peripheral.name!)")
+        }
+        else{
+            print("Services have been found for peripheral w/o name")
+        }
+        let services = peripheral.services!
+        print("Found \(services.count) services for peripheral \(peripheral)")
+        for service in services {
+            print("Service: \(service.uuid)")
+        }
+        
     }
 }
 
