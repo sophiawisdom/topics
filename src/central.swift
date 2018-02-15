@@ -1,4 +1,4 @@
-/* Mostly "inspired" by https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2 */
+d/* Mostly "inspired" by https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2 */
 import Foundation
 import CoreBluetooth
 
@@ -8,7 +8,8 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var del: PeripheralDelegate!
     var knownPeripherals = [CBPeripheral]() // List of all peripherals we've encountered
     var peripheralMsgCharacteristics = [String: CBCharacteristic]() // Map between peripherals we've encountered and their msg characteristics
-    let messageServiceUUID = CBUUID(string: "0x1800")
+    let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
+    let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
     
     override init() {
         super.init()
@@ -19,10 +20,11 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("Central Manager state has changed. This is probably good.")
     }
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
+        // We've found a peripheral; should we connect?
         var should_connect = false
         if let BUUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
             switch BUUID {
-            case "hello" as String:
+            case messageServiceUUID as CBUUID:
                 print("Found peripheral with BUUID 'hello'. Connecting.")
                 should_connect = true
             case is String:
@@ -59,7 +61,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {
         didConnect.delegate = del
-        didConnect.discoverServices(nil)
+        didConnect.discoverServices([messageServiceUUID])
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect: CBPeripheral, error: Error?) {
@@ -72,7 +74,6 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     override init() {
         super.init()
-        print("hi")
     }
     
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {}
@@ -89,7 +90,9 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         print("Found \(services.count) services for peripheral \(peripheral)")
         for service in services {
             print("Service: \(service.uuid)")
+            peripheral.discoverCharacteristics(nil, for: service)
         }
+        
         
     }
 }

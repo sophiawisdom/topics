@@ -1,10 +1,10 @@
 import Foundation
 import CoreBluetooth
 
-//let periph_man = PeripheralMan()
+let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
+let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
 let central_man = CentralMan()
-//let periphMan = PeripheralMan()
-//start_advertising(periph_man:periphMan)
+
 var queue: DispatchQueue!
 if #available(OSX 10.10, *) {
     queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
@@ -14,23 +14,49 @@ if #available(OSX 10.10, *) {
 
 central_man.centralManager = CBCentralManager(delegate: central_man, queue: queue)
 
-let standInUUID = CBUUID(string: "0x1800")
-//var ids: [CBUUID] = [standInUUID]
-while (!(central_man.centralManager.state == .poweredOn)){
+while (!(central_man.centralManager.state == .poweredOn)){ // wait until it powers on
     usleep(1000)
 }
+
 print("Central Manager powered on")
 central_man.centralManager.scanForPeripherals(withServices:nil)
 
-/*func sendMessage(central: CBCentralManager,peripheral: CBPeripheral, messageText: String){
-    // Do the peripheral objects keep a record of what characteristics we need?
-    let data = messageText.data(using: .utf8)! // When sending messages we need the type to be a byte buffer
-    peripheral.writeValue(data, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
+func send_message(_ peripheral:CBPeripheral,central:CentralMan,message:String){
     
-}*/
-
-while (true){
-    usleep(100000)
-    //print("huH")
+    let data = message.data(using: .utf8)!
+    
+    var service_to_write: CBService! // getting the write characteristic
+    for service in peripheral.services! {
+        if (service.uuid == messageServiceUUID){
+            service_to_write = service
+        }
+    }
+    if (service_to_write == nil){
+        print("Not able to find message service")
+        return
+    }
+    
+    var characteristic_to_write: CBCharacteristic!
+    for characteristic in service_to_write.characteristics! {
+        if (characteristic.uuid == messageCharacteristicUUID){
+            characteristic_to_write = characteristic
+        }
+    }
+    if (characteristic_to_write == nil){
+        print("Not able to find message characteristic")
+        return
+    }
+    
+    
+    characteristic_to_write = characteristic_to_write!
+    peripheral.writeValue(data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
+    
 }
-
+usleep(5000000)
+print("Done waiting.")
+var to_send = ""
+while (true){
+    to_send = readLine()!
+    print("Sending message \(to_send) to peripheral \(central_man.knownPeripherals[0])")
+    send_message(central_man.knownPeripherals[0], central: central_man, message: to_send)
+}
