@@ -49,7 +49,6 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                 print("\(didDiscover.identifier)")
             }
             else{
-                print("\(didDiscover)")
             }
         }
         if should_connect == false {

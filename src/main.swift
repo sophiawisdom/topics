@@ -1,9 +1,19 @@
 import Foundation
 import CoreBluetooth
 
+let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
+let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
+var queue: DispatchQueue!
+if #available(OSX 10.10, *) {
+    queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
+} else {
+    print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
+}
+let name = "Sophia"
+
 struct user {
     let name: String
-    var lastSeen: NSDate
+    var lastSeen: Int64 // timestamp since epoch in milliseconds
     let identifier: String?
 }
 struct message {
@@ -15,7 +25,7 @@ struct message {
         let messageData = NSMutableData(length: 0)! // Length initialized at 0 because appending is easy
         
         var timeSentInt = Int64(timeSent) // Needed for pointer math
-        let timeSentIntData = NSData(bytes: &timeSentInt, length: 8) // doubles take 8 bytes
+        let timeSentIntData = NSData(bytes: &timeSentInt, length: 8) // int64 take 8 bytes
         messageData.append(timeSentIntData as Data)
         
         
@@ -45,7 +55,7 @@ func data_to_message(_ data: NSData) -> message {
     
     let sendIndex = Int(bytes.load(fromByteOffset: 8,  as:Int32.self))
     let recvIndex = Int(bytes.load(fromByteOffset: 12, as:Int32.self)) + sendIndex
-    let msgIndex = Int(bytes.load(fromByteOffset:  16, as: Int32.self)) + recvIndex
+    let msgIndex = Int(bytes.load(fromByteOffset:  16, as:Int32.self)) + recvIndex
     let range = NSMakeRange(20,msgIndex) // NSMakeRange is start, step not start, end
     
     let string = String(data: data.subdata(with: range), encoding: .utf8)!
@@ -59,28 +69,9 @@ func data_to_message(_ data: NSData) -> message {
     
 }
 
-let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
-let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
-let central_man = CentralMan()
-
-var queue: DispatchQueue!
-if #available(OSX 10.10, *) {
-    queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
-} else {
-    print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
-}
-
-central_man.centralManager = CBCentralManager(delegate: central_man, queue: queue)
-
-while (!(central_man.centralManager.state == .poweredOn)){ // wait until it powers on
-    usleep(1000)
-}
-
-print("Central Manager powered on")
-central_man.centralManager.scanForPeripherals(withServices:nil)
-
-func send_message(_ peripheral:CBPeripheral,central:CentralMan,message:String){
-    let data = message.data(using: .utf8)!
+func send_message(_ peripheral:CBPeripheral,central:CentralMan,message_text:String){
+    let currtime = Int64(NSDate().timeIntervalSince1970 * 1000)
+    let msg = message(sendingUser:name,receivingUser:peripheral.name!,messageText:message_text,timeSent:currtime)
     
     var service_to_write: CBService! // getting the write characteristic
     for service in peripheral.services! {
@@ -106,16 +97,29 @@ func send_message(_ peripheral:CBPeripheral,central:CentralMan,message:String){
     
     
     characteristic_to_write = characteristic_to_write!
-    peripheral.writeValue(data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
+    peripheral.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
     
 }
+
+let central_man = CentralMan()
+let periph_man = PeripheralMan()
+
+central_man.centralManager = CBCentralManager(delegate: central_man, queue: queue)
+start_advertising(periph_man: periph_man) // better way to do this - block somewhere else
+
+while (!(central_man.centralManager.state == .poweredOn)){ // wait until it powers on
+    usleep(1000)
+}
+
+central_man.centralManager.scanForPeripherals(withServices:nil)
+
 while (central_man.connectedUsers.count == 0){
     usleep(1000)
 }
-print("Have found other user to connect to. Typing sends a message to them")
 var to_send: String
+print("SENDING TEXT TO \(central_man.connectedUsers[0].name!)")
 while (true){
     to_send = readLine()!
     print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0])")
-    send_message(central_man.connectedUsers[0], central: central_man, message: to_send)
+    send_message(central_man.connectedUsers[0], central: central_man, message_text: to_send)
 }
