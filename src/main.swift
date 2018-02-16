@@ -59,6 +59,16 @@ func data_to_message(_ data: NSData) -> message {
     
 }
 
+let periph_man = PeripheralMan()
+start_advertising(periph_man: periph_man)
+while (true){
+    usleep(100000)
+    //print("huH")
+}
+
+
+
+/*
 let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
 let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
 let central_man = CentralMan()
@@ -119,3 +129,4 @@ while (true){
     print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0])")
     send_message(central_man.connectedUsers[0], central: central_man, message: to_send)
 }
+*/
