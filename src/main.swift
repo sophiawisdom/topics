@@ -9,17 +9,61 @@ if #available(OSX 10.10, *) {
 } else {
     print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
 }
-let name = Host.current().localizedName ?? ""
+
 
 struct user {
     let name: String
     var lastSeen: Int64 // timestamp since epoch in milliseconds
     let identifier: String?
+    func user_to_data() -> NSData {
+        let messageData = NSMutableData(length: 0)!
+        
+        var lastSeenNum = lastSeen
+        let lastSeenData = NSData(bytes: &lastSeenNum, length:8)
+        messageData.append(lastSeenData as Data)
+        
+        var isIdentifier:Int8
+        if (identifier != nil){
+            isIdentifier = Int8(identifier!.utf8.count)
+        }
+        else {
+            isIdentifier = 0
+        }
+        let isIdentifierData = NSData(bytes: &isIdentifier, length:1) // Bools are int8 behind the scenes
+        messageData.append(isIdentifierData as Data)
+        if let iden = identifier {
+            messageData.append(iden.data(using: .utf8)!)
+        }
+        messageData.append(name.data(using: .utf8)!)
+        
+        return messageData
+    }
+}
+
+let name = Host.current().localizedName ?? ""
+let selfUser = user(name: name, lastSeen: 0, identifier: "identifier_self")
+let testUser = user(name:"test", lastSeen: 1251231, identifier: "identifier_test")
+
+print("Your computers name is \(name)")
+
+func data_to_user(_ data: NSData) -> user {
+    var identifier: String?
+    let lastSeen = data.bytes.load(as:Int64.self)
+    let isIdentifier = Int(data.bytes.load(fromByteOffset: 8,  as:Int8.self))
+    let range = NSMakeRange(9,data.length-9)
+    var name = String(data: data.subdata(with: range), encoding: .utf8)!
+    print("Total string is \(name)")
+    if (isIdentifier != 0){
+        identifier = String(name.prefix(isIdentifier))
+        name = String(name.suffix(name.count-isIdentifier))
+    }
+    return user(name:name,lastSeen:lastSeen,identifier:identifier)
+    
 }
 struct message {
-    let sendingUser: String // Names respectively. Max length 30 bytes?
-    let receivingUser: String
-    let messageText: String // Maybe it should be data?
+    let sendingUser: user
+    let receivingUser: user
+    let messageText: String // Every text component can be of unlimited length (other than bluetooth limits).
     let timeSent: Int64 // timestamp since epoch in milliseconds
     func message_to_data() -> NSData { // This probably causes a memory leak because I don't know how pointers work
         let messageData = NSMutableData(length: 0)! // Length initialized at 0 because appending is easy
@@ -30,20 +74,23 @@ struct message {
         
         
         // Append string lengths
-        var lengthSend = Int32(sendingUser.utf8.count)
+        let sendingUserData = sendingUser.user_to_data()
+        var lengthSend = Int32(sendingUserData.length)
         messageData.append(NSData(bytes: &lengthSend, length: 4) as Data)
         
-        var lengthRecv = Int32(receivingUser.utf8.count)
+        let receivingUserData = receivingUser.user_to_data()
+        var lengthRecv = Int32(receivingUserData.length)
         messageData.append(NSData(bytes: &lengthRecv, length: 4) as Data)
         
         var lengthMsg = Int32(messageText.utf8.count)
         messageData.append(NSData(bytes: &lengthMsg, length: 4) as Data)
         
         
-        messageData.append(sendingUser.data(using: .utf8)!)
-        messageData.append(receivingUser.data(using: .utf8)!)
+        messageData.append(sendingUserData as Data)
+        messageData.append(receivingUserData as Data)
         messageData.append(messageText.data(using: .utf8)!) // append strings
-        return messageData
+        
+        return messageData // Overall structure: two bytes timeSent, three int32s describing how long sending user, receiving user, and message text are, then those texts in that order.
         
     }
 }
@@ -53,27 +100,30 @@ func data_to_message(_ data: NSData) -> message {
     
     let timeSentInt = bytes.load(as:Int64.self)
     
-    let sendIndex = Int(bytes.load(fromByteOffset: 8,  as:Int32.self))
-    let recvIndex = Int(bytes.load(fromByteOffset: 12, as:Int32.self)) + sendIndex
-    let msgIndex = Int(bytes.load(fromByteOffset:  16, as:Int32.self)) + recvIndex
-    let range = NSMakeRange(20,msgIndex) // NSMakeRange is start, step not start, end
+    let sendLen = Int(bytes.load(fromByteOffset: 8,  as:Int32.self))
+    let recvLen = Int(bytes.load(fromByteOffset: 12, as:Int32.self))
+    let msgIndex = Int(bytes.load(fromByteOffset:  16, as:Int32.self))
     
-    let string = String(data: data.subdata(with: range), encoding: .utf8)!
+//    let string = String(data: data.subdata(with: range), encoding: .utf8)!
     
-    let sendingUser = String(string.prefix(sendIndex))
-    var receivingUser = String(string.suffix(msgIndex-sendIndex))
-    receivingUser = String(receivingUser.prefix(recvIndex-sendIndex))
-    let messageText = String(string.suffix(msgIndex-recvIndex))
+    var range = NSMakeRange(20,sendLen)
+    let sendingUser = data_to_user(data.subdata(with: range) as NSData)
+    range = NSMakeRange(20+sendLen,recvLen)
+    let receivingUser = data_to_user(data.subdata(with: range) as NSData)
+    
+    range = NSMakeRange(20+sendLen+recvLen,msgIndex)
+    let messageText = String(data: data.subdata(with: range), encoding: .utf8)!
     
     return message(sendingUser: sendingUser, receivingUser: receivingUser, messageText: messageText, timeSent: timeSentInt)
     
 }
 
-func send_message(_ peripheral:CBPeripheral,central:CentralMan,message_text:String){
+func send_message(_ peripheral:CBPeripheral,messageText:String){
     let currtime = Int64(NSDate().timeIntervalSince1970 * 1000)
-    let msg = message(sendingUser:name,receivingUser:peripheral.name!,messageText:message_text,timeSent:currtime)
+    let otherUser = user(name:peripheral.name!, lastSeen: 0, identifier: "12412")
+    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:currtime)
     
-    var service_to_write: CBService! // getting the write characteristic
+    var service_to_write: CBService! // To find the write characteristic you have to find the service
     for service in peripheral.services! {
         if (service.uuid == messageServiceUUID){
             service_to_write = service
@@ -84,7 +134,7 @@ func send_message(_ peripheral:CBPeripheral,central:CentralMan,message_text:Stri
         return
     }
     
-    var characteristic_to_write: CBCharacteristic!
+    var characteristic_to_write: CBCharacteristic! // And then find the characteristic
     for characteristic in service_to_write.characteristics! {
         if (characteristic.uuid == messageCharacteristicUUID){
             characteristic_to_write = characteristic
@@ -100,6 +150,13 @@ func send_message(_ peripheral:CBPeripheral,central:CentralMan,message_text:Stri
     peripheral.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
     
 }
+
+var msg = message(sendingUser: selfUser, receivingUser: testUser, messageText: "Test message!", timeSent: 235235)
+print("Message originally is \(msg)")
+var msgData = msg.message_to_data()
+print("Message -> data is \(msgData)")
+var msgRedux = data_to_message(msgData)
+print("Message -> data -> Message is \(msgRedux)")
 
 let central_man = CentralMan()
 let periph_man = PeripheralMan()
@@ -121,5 +178,5 @@ print("SENDING TEXT TO \(central_man.connectedUsers[0].name!)")
 while (true){
     to_send = readLine()!
     print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0].name!)")
-    send_message(central_man.connectedUsers[0], central: central_man, message_text: to_send)
+    send_message(central_man.connectedUsers[0], messageText: to_send)
 }

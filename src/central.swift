@@ -30,7 +30,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             case is String:
                 print("UUID \(BUUID) found")
             default:
-                print("Service UUID that is not string found: \(BUUID)")
+                print("advert has incorrect UUID \(advertisementData)")
             }
         }
         else if let name = advertisementData[CBAdvertisementDataLocalNameKey] {
@@ -39,16 +39,9 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                 print("Found JasonChasez. Attempting to connect.")
                 should_connect = true
             case is String:
-                print("Found peripheral named \(name). Not connecting.")
+                print("Found peripheral named \(name) with advertisement data \(advertisementData)")
             default:
                 print("Somehow found name that is not string.")
-            }
-        }
-        else {
-            if #available(OSX 10.13,*){
-                print("\(didDiscover.identifier)")
-            }
-            else{
             }
         }
         if should_connect == false {
