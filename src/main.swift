@@ -52,7 +52,6 @@ func data_to_user(_ data: NSData) -> user {
     let isIdentifier = Int(data.bytes.load(fromByteOffset: 8,  as:Int8.self))
     let range = NSMakeRange(9,data.length-9)
     var name = String(data: data.subdata(with: range), encoding: .utf8)!
-    print("Total string is \(name)")
     if (isIdentifier != 0){
         identifier = String(name.prefix(isIdentifier))
         name = String(name.suffix(name.count-isIdentifier))
@@ -150,13 +149,6 @@ func send_message(_ peripheral:CBPeripheral,messageText:String){
     peripheral.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
     
 }
-
-var msg = message(sendingUser: selfUser, receivingUser: testUser, messageText: "Test message!", timeSent: 235235)
-print("Message originally is \(msg)")
-var msgData = msg.message_to_data()
-print("Message -> data is \(msgData)")
-var msgRedux = data_to_message(msgData)
-print("Message -> data -> Message is \(msgRedux)")
 
 let central_man = CentralMan()
 let periph_man = PeripheralMan()
