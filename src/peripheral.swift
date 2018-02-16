@@ -10,7 +10,6 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
 
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager)
     {
-        print("PeripherManager state has changed to \(peripheral.state)")
     }
     
 
@@ -20,7 +19,6 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
             print("Failed… error: \(error)")
             return
         }
-        print("Peripheral Manager has started advertising")
     }
 
     func peripheralManager(peripheral: CBPeripheralManager, didAdd service: CBService, error: NSError?)

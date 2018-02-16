@@ -17,7 +17,6 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     }
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("Central Manager state has changed. This is probably good.")
     }
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
         // We've found a peripheral; should we connect?
@@ -95,6 +94,9 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             peripheral.discoverCharacteristics(nil, for: service)
         }
         
+        
+    }
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor: CBService, error: Error?){
         
     }
 }
