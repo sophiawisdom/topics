@@ -9,7 +9,7 @@ if #available(OSX 10.10, *) {
 } else {
     print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
 }
-let name = "Sophia"
+let name = Host.current().localizedName ?? ""
 
 struct user {
     let name: String
@@ -120,6 +120,6 @@ var to_send: String
 print("SENDING TEXT TO \(central_man.connectedUsers[0].name!)")
 while (true){
     to_send = readLine()!
-    print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0])")
+    print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0].name!)")
     send_message(central_man.connectedUsers[0], central: central_man, message_text: to_send)
 }

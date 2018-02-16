@@ -25,7 +25,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         if let BUUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
             switch BUUID {
             case messageServiceUUID as CBUUID:
-                print("Found peripheral with BUUID 'hello'. Connecting.")
+                print("Found peripheral with correct messageServiceUUID. Connecting.")
                 should_connect = true
             case is String:
                 print("UUID \(BUUID) found")

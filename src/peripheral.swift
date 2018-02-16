@@ -40,7 +40,6 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
-        print("A service was added to peripheral")
     }
 
 }
@@ -62,14 +61,13 @@ func start_advertising(periph_man: PeripheralMan!){
     
     let properties: CBCharacteristicProperties = [.notify, .read, .write]
     let permissions: CBAttributePermissions = [.readable, .writeable]
-    let serviceUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20") //these UUIDS probably need to be changed
-    let charUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
-    let someCharacteristic = CBMutableCharacteristic(type: serviceUUID, properties: properties, value: nil, permissions: permissions)
-    let someService = CBMutableService(type:charUUID, primary:true)
-    print(serviceUUID)
+    let charUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20") //these UUIDS probably need to be changed
+    let serviceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
+    let someCharacteristic = CBMutableCharacteristic(type: charUUID, properties: properties, value: nil, permissions: permissions)
+    let someService = CBMutableService(type:serviceUUID, primary:true)
     someService.characteristics = [someCharacteristic]
-    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : "JasonChasez"]// probably the right format, thank apple for their definitely helpful documentation
-    
+    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name,CBAdvertisementDataServiceUUIDsKey:[serviceUUID]]// probably the right format, thank apple for their definitely helpful documentation
+    print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
         if(!periph_man.peripheralManager.isAdvertising) {
             periph_man.peripheralManager.removeAllServices()
