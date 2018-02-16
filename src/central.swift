@@ -6,9 +6,10 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
     var del: PeripheralDelegate!
-    var knownPeripherals = [CBPeripheral]() // List of all peripherals we've encountered
+    var connectedUsers = [CBPeripheral]() // List of all peripherals we've encountered
     var peripheralMsgCharacteristics = [String: CBCharacteristic]() // Map between peripherals we've encountered and their msg characteristics
-    let messageServiceUUID = CBUUID(string: "0x1800")
+    let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
+    let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
     
     override init() {
         super.init()
@@ -19,22 +20,40 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         print("Central Manager state has changed. This is probably good.")
     }
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
-        print("diddiscover called")
+        // We've found a peripheral; should we connect?
+        var should_connect = false
         if let BUUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
             switch BUUID {
-            case "hello" as String:
-                print("Got em")
+            case messageServiceUUID as CBUUID:
+                print("Found peripheral with BUUID 'hello'. Connecting.")
+                should_connect = true
+            case is String:
+                print("UUID \(BUUID) found")
             default:
-                print("ServiceUUIDS other than 'hello'")
+                print("Service UUID that is not string found: \(BUUID)")
             }
         }
         else if let name = advertisementData[CBAdvertisementDataLocalNameKey] {
             switch name {
-            case "JasonChase" as String:
-                print("Found Local Name Jason Chase")
+            case "JasonChasez" as String:
+                print("Found JasonChasez. Attempting to connect.")
+                should_connect = true
+            case is String:
+                print("Found peripheral named \(name). Not connecting.")
             default:
-                print("Found peripheral without UUIDS and with name but name not Jason Chase. Name was bad")
+                print("Somehow found name that is not string.")
             }
+        }
+        else {
+            if #available(OSX 10.13,*){
+                print("\(didDiscover.identifier)")
+            }
+            else{
+                print("\(didDiscover)")
+            }
+        }
+        if should_connect == false {
+            return
         }
         
         
@@ -42,45 +61,12 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         
         centralManager.connect(didDiscover, options: nil)
         
-        
-        
-        
-        knownPeripherals.append(didDiscover)
+        connectedUsers.append(didDiscover) // This person has either a good UUID or good name, so
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {
-        print("Connected to peripheral")
         didConnect.delegate = del
-        didConnect.discoverServices(nil)
-        var num_waits = 0
-        while didConnect.services == nil{
-            usleep(1000)
-            num_waits += 1
-            if (num_waits > 1 && (num_waits%1000 == 0)){
-                print("Waiting for didConnect.services to be non-nil")
-            }
-        }
-        var have_message_service = false
-        print("Peripheral has \(didConnect.services!.count) services")
-        for service in didConnect.services! {
-            print("Service discovered on peripheral: \(service)")
-            if (service.uuid == messageServiceUUID){
-                have_message_service = true
-                print("Found message service UUID on peripheral")
-            }
-        }
-        if (have_message_service == true){
-            
-        }
-        
-    }
-    
-    func sendMessage(_ central: CBCentralManager,peripheral: CBPeripheral, messageText: String){
-        // Do the peripheral objects keep a record of what characteristics we need?
-        let data = messageText.data(using: .utf8)! // When sending messages we need the type to be a byte buffer
-        let characteristic = peripheralMsgCharacteristics[peripheral.name!]
-        peripheral.writeValue(data, for: characteristic!, type: CBCharacteristicWriteType.withoutResponse) // Ask for response or not?
-        
+        didConnect.discoverServices([messageServiceUUID])
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect: CBPeripheral, error: Error?) {
@@ -93,16 +79,26 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     override init() {
         super.init()
-        print("hi")
     }
     
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {}
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?)
     {
-        print("peripheral func")
-        let services = peripheral.services
-        print("Found \(services!.count) services! :\(services!) for peripheral \(peripheral)")
+        if (peripheral.name != nil){
+            print("Services have been found for peripheral \(peripheral.name!)")
+        }
+        else{
+            print("Services have been found for peripheral w/o name")
+        }
+        let services = peripheral.services!
+        print("Found \(services.count) services for peripheral \(peripheral)")
+        for service in services {
+            print("Service: \(service.uuid)")
+            peripheral.discoverCharacteristics(nil, for: service)
+        }
+        
+        
     }
 }
 
