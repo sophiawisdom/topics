@@ -37,6 +37,10 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         print("Value: \(didReceiveWrite[0].value!)")
         peripheralManager.respond(to: didReceiveWrite[0], withResult: CBATTError.Code.success)
     }
+    
+    func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
+        print("A service was added to peripheral")
+    }
 
 }
 
@@ -57,17 +61,19 @@ func start_advertising(periph_man: PeripheralMan!){
     
     let properties: CBCharacteristicProperties = [.notify, .read, .write]
     let permissions: CBAttributePermissions = [.readable, .writeable]
-    let standInUUID = CBUUID(string: "0x1800") //these UUIDS probably need to be changed
-    let serviceUUID = CBUUID(string: "0x1800")
-    let someCharacteristic = CBMutableCharacteristic(type: standInUUID, properties: properties, value: nil, permissions: permissions)
-    let someService = CBMutableService(type:serviceUUID, primary:true)
-    
+    let serviceUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20") //these UUIDS probably need to be changed
+    let charUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
+    let someCharacteristic = CBMutableCharacteristic(type: serviceUUID, properties: properties, value: nil, permissions: permissions)
+    let someService = CBMutableService(type:charUUID, primary:true)
+    print(serviceUUID)
     someService.characteristics = [someCharacteristic]
-    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : "JasonChase", CBAdvertisementDataServiceUUIDsKey : ["hello"]]// probably the right format, thank apple for their definitely helpful documentation
+    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : "JasonChasez"]// probably the right format, thank apple for their definitely helpful documentation
     
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
         if(!periph_man.peripheralManager.isAdvertising) {
+            periph_man.peripheralManager.removeAllServices()
             periph_man.peripheralManager.add(someService)
+            usleep(100000)
             periph_man.peripheralManager.startAdvertising(advertisementData)
             while (!periph_man.peripheralManager.isAdvertising){
                 usleep(10000)
