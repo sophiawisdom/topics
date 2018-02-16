@@ -66,7 +66,7 @@ func start_advertising(periph_man: PeripheralMan!){
     let someCharacteristic = CBMutableCharacteristic(type: charUUID, properties: properties, value: nil, permissions: permissions)
     let someService = CBMutableService(type:serviceUUID, primary:true)
     someService.characteristics = [someCharacteristic]
-    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name,CBAdvertisementDataServiceUUIDsKey:[serviceUUID]]// probably the right format, thank apple for their definitely helpful documentation
+    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[serviceUUID]]// probably the right format, thank apple for their definitely helpful documentation
     print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
         if(!periph_man.peripheralManager.isAdvertising) {

@@ -27,6 +27,11 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             case messageServiceUUID as CBUUID:
                 print("Found peripheral with correct messageServiceUUID. Connecting.")
                 should_connect = true
+            case [messageServiceUUID] as NSMutableArray:
+                print("Found correct UUID. Advertising_data: \(advertisementData)")
+                should_connect = true
+            case is NSMutableArray:
+                print("Found NSMutableArray: \(BUUID)")
             case is String:
                 print("UUID \(BUUID) found")
             default:
