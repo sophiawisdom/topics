@@ -6,8 +6,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
     var del: PeripheralDelegate!
-    var connectedUsers = [CBPeripheral]() // List of all peripherals we've encountered
-    var peripheralMsgCharacteristics = [String: CBCharacteristic]() // Map between peripherals we've encountered and their msg characteristics
+    var connectedUsers = [user: CBPeripheral]() // List of all peripherals we've encountered
     let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
     let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
     
@@ -26,18 +25,21 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             case messageServiceUUID as CBUUID:
                 print("Found peripheral with correct messageServiceUUID. Connecting.")
                 should_connect = true
-            case [messageServiceUUID] as NSMutableArray:
-                print("Found correct UUID. Advertising_data: \(advertisementData)")
-                should_connect = true
             case is NSMutableArray:
                 let UUIDArr = BUUID as! NSMutableArray
                 let broadcastUUID = UUIDArr[0] as! CBUUID
-                if #available(OSX 10.10, *){
-                    print("Encountered peripheral with UUID \(broadcastUUID.uuidString)")
-
+                if broadcastUUID == messageServiceUUID {
+                    print("Found messageServiceUUID UUID. Advertising_data: \(advertisementData)")
+                    should_connect = true
                 }
                 else {
-                    print("Encountered peripheral with UUID \(broadcastUUID)")
+                    if #available(OSX 10.10, *){
+                        print("Encountered peripheral with UUID \(broadcastUUID.uuidString)")
+                    
+                    }
+                    else {
+                        print("Encountered peripheral with UUID \(broadcastUUID)")
+                    }
                 }
             case is String:
                 print("UUID \(BUUID) found")
@@ -60,12 +62,17 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             return
         }
         
+        let name = advertisementData[CBAdvertisementDataLocalNameKey]
+        
+        let usr = user(name: name as! String, lastSeen: nil, peripheral: didDiscover) // should fail if they don't have name
         
         didDiscover.delegate = del
         
         centralManager.connect(didDiscover, options: nil)
         
-        connectedUsers.append(didDiscover) // This person has either a good UUID or good name, so
+        connectedUsers[usr] = didDiscover
+        
+        print("Connected to user with name \(usr.name)")
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) {

@@ -8,7 +8,28 @@ let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767
 struct user {
     let name: String
     var lastSeen: Int64 // timestamp since epoch in milliseconds
-    let identifier: String?
+    var identifier: String?
+    let peripheral: CBPeripheral?
+    
+    
+    init(name: String, lastSeen: Int64?, peripheral: CBPeripheral?) {
+        if (lastSeen == nil){
+            self.lastSeen = Int64(NSDate().timeIntervalSince1970 * 1000)
+        }
+        else {
+            self.lastSeen = lastSeen!
+        }
+        self.name = name
+        self.peripheral = peripheral
+        if (peripheral != nil){
+            if #available(OSX 10.13,*){
+                self.identifier = peripheral!.identifier.uuidString
+            }
+            else {
+            }
+        }
+    }
+
     func user_to_data() -> NSData {
         let messageData = NSMutableData(length: 0)!
         
@@ -16,39 +37,30 @@ struct user {
         let lastSeenData = NSData(bytes: &lastSeenNum, length:8)
         messageData.append(lastSeenData as Data)
         
-        var isIdentifier:Int8
-        if (identifier != nil){
-            isIdentifier = Int8(identifier!.utf8.count)
-        }
-        else {
-            isIdentifier = 0
-        }
-        let isIdentifierData = NSData(bytes: &isIdentifier, length:1) // Bools are int8 behind the scenes
-        messageData.append(isIdentifierData as Data)
-        if let iden = identifier {
-            messageData.append(iden.data(using: .utf8)!)
-        }
         messageData.append(name.data(using: .utf8)!)
         
         return messageData
     }
 }
 
+extension user: Hashable {
+    var hashValue: Int {
+        return name.hashValue + lastSeen.hashValue
+    }
+    
+    static func == (first: user, second: user) -> Bool {
+        return (first.name == second.name) && (first.lastSeen == second.lastSeen)
+    }
+}
 let name = Host.current().localizedName ?? ""
-let selfUser = user(name: name, lastSeen: 0, identifier: "identifier_self")
-let testUser = user(name:"test", lastSeen: 1251231, identifier: "identifier_test")
+let selfUser = user(name: name, lastSeen: nil, peripheral: nil)
+
 
 func data_to_user(_ data: NSData) -> user {
-    var identifier: String?
     let lastSeen = data.bytes.load(as:Int64.self)
-    let isIdentifier = Int(data.bytes.load(fromByteOffset: 8,  as:Int8.self))
-    let range = NSMakeRange(9,data.length-9)
-    var name = String(data: data.subdata(with: range), encoding: .utf8)!
-    if (isIdentifier != 0){
-        identifier = String(name.prefix(isIdentifier))
-        name = String(name.suffix(name.count-isIdentifier))
-    }
-    return user(name:name,lastSeen:lastSeen,identifier:identifier)
+    let range = NSMakeRange(8,data.length-8)
+    let name = String(data: data.subdata(with: range), encoding: .utf8)!
+    return user(name:name,lastSeen:lastSeen,peripheral: nil)
     
 }
 struct message {
@@ -107,9 +119,9 @@ func data_to_message(_ data: NSData) -> message {
     
 }
 
-func send_message(_ peripheral:CBPeripheral,messageText:String){
+func send_message(_ otherUser:user,messageText:String){
     let currtime = Int64(NSDate().timeIntervalSince1970 * 1000)
-    let otherUser = user(name:peripheral.name!, lastSeen: 0, identifier: "12412")
+    let peripheral = central_man.connectedUsers[otherUser]!
     let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:currtime)
     
     var service_to_write: CBService! // To find the write characteristic you have to find the service
@@ -163,9 +175,10 @@ while (central_man.connectedUsers.count == 0){
     usleep(1000)
 }
 var to_send: String
-print("SENDING TEXT TO \(central_man.connectedUsers[0].name!)")
+/*print("SENDING TEXT TO \(central_man.connectedUsers[0].name!)")
 while (true){
     to_send = readLine()!
     print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0].name!)")
     send_message(central_man.connectedUsers[0], messageText: to_send)
 }
+*/
