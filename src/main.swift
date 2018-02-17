@@ -1,3 +1,16 @@
+/* TODO
+        Implement sending messages between several users:
+            Implement spreading user lists around and keeping them fresh
+                Implement user pings
+                Implement new user procedure
+            Implement sending messages
+                Implement sending messages around as sender - scattering seeds
+                Implement being carrier for a message
+                    Not sending more if you've found the right person, not sending same message twice
+        Implement actual fucking UI
+ */
+
+
 import Foundation
 import CoreBluetooth
 
@@ -182,11 +195,13 @@ start_advertising(periph_man: periph_man) // This function is blocking for proba
 while (central_man.connectedUsers.count == 0){
     usleep(1000)
 }
+let allKeys = Array(central_man.connectedUsers.keys)
+let receivingUser = allKeys[0]
+print("SENDING TEXT TO \(receivingUser)")
+
 var to_send: String
-/*print("SENDING TEXT TO \(central_man.connectedUsers[0].name!)")
 while (true){
     to_send = readLine()!
-    print("Sending message \(to_send) to peripheral \(central_man.connectedUsers[0].name!)")
-    send_message(central_man.connectedUsers[0], messageText: to_send)
+    print("Sending message \(to_send) to peripheral \(allKeys[0].name)")
+    send_message(receivingUser, messageText: to_send)
 }
-*/
