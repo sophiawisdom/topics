@@ -121,11 +121,19 @@ func data_to_message(_ data: NSData) -> message {
 
 func send_message(_ otherUser:user,messageText:String){
     let currtime = Int64(NSDate().timeIntervalSince1970 * 1000)
-    let peripheral = central_man.connectedUsers[otherUser]!
+    var peripheral = central_man.connectedUsers[otherUser]
+    if (peripheral == nil){
+        peripheral = otherUser.peripheral
+    }
+    if (peripheral == nil){
+        print("Unable to find peripheral for user \(otherUser) and thus unable to send message to them")
+        return
+    }
+
     let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:currtime)
     
     var service_to_write: CBService! // To find the write characteristic you have to find the service
-    for service in peripheral.services! {
+    for service in peripheral!.services! {
         if (service.uuid == messageServiceUUID){
             service_to_write = service
         }
@@ -148,7 +156,7 @@ func send_message(_ otherUser:user,messageText:String){
     
     
     characteristic_to_write = characteristic_to_write!
-    peripheral.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
+    peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
     
 }
 
