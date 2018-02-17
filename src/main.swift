@@ -134,13 +134,13 @@ func data_to_message(_ data: NSData) -> message {
 
 func send_message(_ otherUser:user,messageText:String){
     let currtime = Int64(NSDate().timeIntervalSince1970 * 1000)
-    var peripheral = central_man.connectedUsers[otherUser]
+    var peripheral = otherUser.peripheral
     if (peripheral == nil){
-        peripheral = otherUser.peripheral
-    }
-    if (peripheral == nil){
-        print("Unable to find peripheral for user \(otherUser) and thus unable to send message to them")
+        print("We're probably trying to send messages to a user that is not connected to us. This is not implemented yet.")
         return
+    }
+    else {
+        peripheral = peripheral!
     }
 
     let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:currtime)
@@ -195,13 +195,12 @@ start_advertising(periph_man: periph_man) // This function is blocking for proba
 while (central_man.connectedUsers.count == 0){
     usleep(1000)
 }
-let allKeys = Array(central_man.connectedUsers.keys)
-let receivingUser = allKeys[0]
+let receivingUser = central_man.connectedUsers[0]
 print("SENDING TEXT TO \(receivingUser)")
 
 var to_send: String
 while (true){
     to_send = readLine()!
-    print("Sending message \(to_send) to peripheral \(allKeys[0].name)")
+    print("Sending message \(to_send) to peripheral \(receivingUser.name)")
     send_message(receivingUser, messageText: to_send)
 }
