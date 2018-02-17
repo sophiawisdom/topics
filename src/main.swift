@@ -3,12 +3,6 @@ import CoreBluetooth
 
 let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
 let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
-var queue: DispatchQueue!
-if #available(OSX 10.10, *) {
-    queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
-} else {
-    print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
-}
 
 
 struct user {
@@ -43,8 +37,6 @@ struct user {
 let name = Host.current().localizedName ?? ""
 let selfUser = user(name: name, lastSeen: 0, identifier: "identifier_self")
 let testUser = user(name:"test", lastSeen: 1251231, identifier: "identifier_test")
-
-print("Your computers name is \(name)")
 
 func data_to_user(_ data: NSData) -> user {
     var identifier: String?
@@ -103,8 +95,6 @@ func data_to_message(_ data: NSData) -> message {
     let recvLen = Int(bytes.load(fromByteOffset: 12, as:Int32.self))
     let msgIndex = Int(bytes.load(fromByteOffset:  16, as:Int32.self))
     
-//    let string = String(data: data.subdata(with: range), encoding: .utf8)!
-    
     var range = NSMakeRange(20,sendLen)
     let sendingUser = data_to_user(data.subdata(with: range) as NSData)
     range = NSMakeRange(20+sendLen,recvLen)
@@ -153,14 +143,21 @@ func send_message(_ peripheral:CBPeripheral,messageText:String){
 let central_man = CentralMan()
 let periph_man = PeripheralMan()
 
+var queue: DispatchQueue!
+if #available(OSX 10.10, *) {
+    queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
+} else {
+    print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
+}
 central_man.centralManager = CBCentralManager(delegate: central_man, queue: queue)
-start_advertising(periph_man: periph_man) // better way to do this - block somewhere else
 
 while (!(central_man.centralManager.state == .poweredOn)){ // wait until it powers on
     usleep(1000)
 }
 
 central_man.centralManager.scanForPeripherals(withServices:nil)
+
+start_advertising(periph_man: periph_man) // This function is blocking for probably 1-2 seconds, so I wanted to put it in the place where there would be the longest wait.
 
 while (central_man.connectedUsers.count == 0){
     usleep(1000)

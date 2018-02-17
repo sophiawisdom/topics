@@ -30,7 +30,15 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                 print("Found correct UUID. Advertising_data: \(advertisementData)")
                 should_connect = true
             case is NSMutableArray:
-                print("Found NSMutableArray: \(BUUID)")
+                let UUIDArr = BUUID as! NSMutableArray
+                let broadcastUUID = UUIDArr[0] as! CBUUID
+                if #available(OSX 10.10, *){
+                    print("Encountered peripheral with UUID \(broadcastUUID.uuidString)")
+
+                }
+                else {
+                    print("Encountered peripheral with UUID \(broadcastUUID)")
+                }
             case is String:
                 print("UUID \(BUUID) found")
             default:

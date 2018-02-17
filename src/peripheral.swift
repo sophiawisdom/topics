@@ -33,7 +33,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     
     func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) {
         let msg = data_to_message(_: didReceiveWrite[0].value! as NSData)
-        print("User \(msg.sendingUser) sent me (\(msg.receivingUser)) a message: \(msg.messageText)")
+        print("User \(msg.sendingUser.name) sent me (\(msg.receivingUser.name)) a message: \(msg.messageText)")
         peripheralManager.respond(to: didReceiveWrite[0], withResult: CBATTError.Code.success)
     }
     

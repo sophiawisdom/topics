@@ -25,11 +25,7 @@ SDK_PATH    = $(shell xcrun --show-sdk-path --sdk $(SDK))
 SWIFT_FILES = $(wildcard $(SRC_DIR)/*.swift)
 
 build:
-	mkdir -p $(TARGET_DIR)
 	$(SWIFTC) $(SWIFT_FILES) -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(FILE).out
 
-clean:
-	rm -rf $(TARGET_DIR)
-
-nuke:
-	rm -rf $(OUTPUT_DIR)
+static:
+	$(SWIFTC) $(SWIFT_FILES) -static-stdlib -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(FILE)
