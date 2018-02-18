@@ -32,21 +32,30 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
     func peripheralManager(_: CBPeripheralManager, didReceiveRead: CBATTRequest){
         let characteristic = didReceiveRead.characteristic
-        if (characteristic.uuid != userReadCharacteristicUUID){
+        if (characteristic.uuid == userReadCharacteristicUUID){
+            let users = central_man.connectedUsers
+            let responseData = NSMutableData(length: 0)! // length=0 because we will be appending
+            for user in users {
+                let userData = user.user_to_data()
+                var userLength = Int32(userData.length) // var so we can reference memory location
+                responseData.append(NSData(bytes: &userLength, length:4) as Data)
+                responseData.append(userData as Data)
+            }
+            didReceiveRead.value = responseData as Data
+            peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
+        }
+        else if (characteristic.uuid == getFirstSeenCharacteristicUUID){
+            
+            var firstSeenn = selfUser.firstSeen
+            let firstSeen = NSData(bytes: &firstSeenn, length:4) as Data
+            didReceiveRead.value = firstSeen
+            
+            peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
+        }
+        else {
             print("Received read request for characteristic other than userReadCharacteristic: \(characteristic)")
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.attributeNotFound)
-            return
         }
-        let users = central_man.connectedUsers
-        let responseData = NSMutableData(length: 0)! // length=0 because we will be appending
-        for user in users {
-            let userData = user.user_to_data()
-            var userLength = Int32(userData.length) // var so we can reference memory location
-            responseData.append(NSData(bytes: &userLength, length:4) as Data)
-            responseData.append(userData as Data)
-        }
-        didReceiveRead.value = responseData as Data
-        peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
     }
     
     func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) { // In respond to write request
@@ -62,10 +71,16 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
 
 func start_advertising(_ periph_man: PeripheralMan!){
     
+    var firstSeenn = selfUser.firstSeen
+    let firstSeen = NSData(bytes: &firstSeenn, length:4) as Data
+    
     let messageWriteCharacteristic = CBMutableCharacteristic(type: messageWriteCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let userReadCharacteristic = CBMutableCharacteristic(type: userReadCharacteristicUUID, properties: [.read], value: nil, permissions: [.readable])
+    let getFirstSeenCharacteristic = CBMutableCharacteristic(type: getFirstSeenCharacteristicUUID, properties: [.read], value: firstSeen, permissions: [.readable])
     let identifierService = CBMutableService(type:identifierServiceUUID, primary:true)
-    identifierService.characteristics = [messageWriteCharacteristic, userReadCharacteristic] // The insight is that the characteristics are just headers
+    
+    
+    identifierService.characteristics = [messageWriteCharacteristic, userReadCharacteristic, getFirstSeenCharacteristic] // The insight is that the characteristics are just headers
     let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]]
     print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong

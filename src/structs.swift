@@ -2,63 +2,83 @@ import Foundation
 import CoreBluetooth
 
 struct user {
-    let name: String
-    var lastSeen: Int64 // timestamp since epoch in milliseconds
-    var identifier: String?
+    let name: String // Name that they broadcast with
+    var lastSeen: Int64
+    var firstSeen: Int64? // same as before since they first came around. This is an identifier.
     let peripheral: CBPeripheral?
     
     
-    init(name: String, lastSeen: Int64?, peripheral: CBPeripheral?) {
-        if (lastSeen == nil){
-            self.lastSeen = Int64(NSDate().timeIntervalSince1970 * 1000)
-        }
-        else {
-            self.lastSeen = lastSeen!
-        }
+    init(name: String, firstSeen: Int64?, peripheral: CBPeripheral?) {
+        self.firstSeen = firstSeen
+        self.lastSeen = getTime()
         self.name = name
         self.peripheral = peripheral
-        if (peripheral != nil){
-            if #available(OSX 10.13,*){
-                self.identifier = peripheral!.identifier.uuidString
-            }
-            else {
-            }
+        if firstSeen != nil {
+            firstSeenToUser[firstSeen!] = self
         }
+        allUsers.append(self)
     }
     
     func user_to_data() -> NSData {
         let messageData = NSMutableData(length: 0)!
         
-        var lastSeenNum = lastSeen
-        let lastSeenData = NSData(bytes: &lastSeenNum, length:8)
-        messageData.append(lastSeenData as Data)
+        var firstSeenNum = firstSeen
+        let firstSeenData = NSData(bytes: &firstSeenNum, length:8)
+        messageData.append(firstSeenData as Data)
         
         messageData.append(name.data(using: .utf8)!)
         
         return messageData
     }
 }
-
+func getTime() -> Int64 {
+    return Int64(NSDate().timeIntervalSince1970 * 1000)
+}
 extension user: Hashable {
+    
     var hashValue: Int {
-        return name.hashValue + lastSeen.hashValue
+        if (firstSeen == nil){
+            return name.hashValue
+        }
+        else {
+            return name.hashValue + firstSeen!.hashValue
+        }
     }
     
     static func == (first: user, second: user) -> Bool {
-        return (first.name == second.name) && (first.lastSeen == second.lastSeen)
+        if (first.firstSeen == nil || second.firstSeen == nil){
+            return (first.name == second.name)
+        }
+        else{
+            return (first.name == second.name) && (first.firstSeen! == second.firstSeen!)
+        
+        }
     }
 }
-let name = Host.current().localizedName ?? ""
-let selfUser = user(name: name, lastSeen: nil, peripheral: nil)
 
+let name = Host.current().localizedName ?? ""
+let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
+var allUsers = [user]()
+var firstSeenToUser = [Int64: user]()
 
 func data_to_user(_ data: NSData) -> user {
-    let lastSeen = data.bytes.load(as:Int64.self)
+    let firstSeen = data.bytes.load(as:Int64.self)
+
     let range = NSMakeRange(8,data.length-8)
     let name = String(data: data.subdata(with: range), encoding: .utf8)!
-    return user(name:name,lastSeen:lastSeen,peripheral: nil)
     
+    return user(name:name,firstSeen: firstSeen ,peripheral: nil)
 }
+
+func testUserData(){
+    let testUser = user(name: "testUser", firstSeen: 12961, peripheral:nil)
+    print("User originally: \(testUser)")
+    let data = testUser.user_to_data()
+    print("User -> Data: \(data)")
+    let usr = data_to_user(data)
+    print("User -> Data -> User: \(usr)")
+}
+
 struct message {
     let sendingUser: user
     let receivingUser: user
@@ -116,7 +136,6 @@ func data_to_message(_ data: NSData) -> message {
 }
 
 func send_message(_ otherUser:user,messageText:String){
-    let currtime = Int64(NSDate().timeIntervalSince1970 * 1000)
     var peripheral = otherUser.peripheral
     if (peripheral == nil) {
         print("You tried to send a message to \(otherUser) but they have no peripheral. This probably means they are a user we are connected through by an intermediary. Messaging is not implemented yet.")
@@ -124,7 +143,7 @@ func send_message(_ otherUser:user,messageText:String){
     }
     peripheral = peripheral!
     
-    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:currtime)
+    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:getTime())
     
     var service_to_write: CBService! // To find the write characteristic you have to find the service
     for service in peripheral!.services! {
@@ -151,4 +170,34 @@ func send_message(_ otherUser:user,messageText:String){
     
     peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
     
+}
+func update_user_list(){ // Separate thread that runs and tries to continuously update
+    var lastAsked = [user: Double]() // don't ask more than every 10 seconds
+    while (true){
+        for user in central_man.connectedUsers { // for each peripheral connected to
+            
+            if (lastAsked[user]! - NSDate().timeIntervalSince1970) < 10 {
+                continue
+            }
+            
+            let peripheral = user.peripheral!
+            let service = peripheral.services![0]
+            var userCharacteristic: CBCharacteristic?
+            
+            for characteristic in service.characteristics! {
+                if characteristic.uuid == userReadCharacteristicUUID {
+                    userCharacteristic = characteristic
+                }
+            }
+            
+            if userCharacteristic == nil {
+                print("While trying to update user list from \(user), was unable to find userReadCharacteristic")
+                continue
+            }
+            
+            peripheral.readValue(for: userCharacteristic!) // Calls peripheralManager when value is read
+            lastAsked[user] = NSDate().timeIntervalSince1970
+        }
+        usleep(1000000)
+    }
 }

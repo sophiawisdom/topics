@@ -10,6 +10,13 @@
         Implement actual fucking UI
  */
 
+/* Okay let's trace back the user propogation process
+ first a new user starts up and starts advertising
+ They are discovered by everyone around them, and when they connect they are added to the list of users and also asked for their firstSeen. This is necessary because firstSeen is effectively an
+ identifier, and if everyone just got the time they received the advertisement there wouldn't be agreement on who was around.
+ They are then added to the list of people to poll
+ */
+
 
 import Foundation
 import CoreBluetooth
@@ -17,6 +24,7 @@ import CoreBluetooth
 let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
 let messageWriteCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
 let userReadCharacteristicUUID = CBUUID(string: "b8e0fee5-d132-4410-a09f-e584e64a115d")
+let getFirstSeenCharacteristicUUID = CBUUID(string: "7ade0d09-f195-4afe-b476-675ee4476ddf")
 
 // Initialize both Central and Peripheral
 
@@ -58,6 +66,16 @@ else if periph_man.peripheralManager.state == .poweredOn {
     }
     central_man.centralManager.scanForPeripherals(withServices:nil)
 }
+
+central_man.connectedUsers.append(selfUser) // Need to include self for list of users
+DispatchQueue.global(qos: .background).async { // Run background thread to update the list of users we have
+    
+    update_user_list()
+    
+    DispatchQueue.main.async {
+    }
+}
+
 
 while (central_man.connectedUsers.count == 0){
     usleep(1000)
