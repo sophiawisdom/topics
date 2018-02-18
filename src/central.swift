@@ -20,15 +20,15 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
         // We've found a peripheral; should we connect?
         var should_connect = false
-        if let BUUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
-            switch BUUID {
+        if let UUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
+            switch UUID {
             case messageServiceUUID as CBUUID:
                 print("Found peripheral with correct messageServiceUUID. Connecting.")
                 should_connect = true
             case is NSMutableArray:
-                let UUIDArr = BUUID as! NSMutableArray
+                let UUIDArr = UUID as! NSMutableArray
                 let broadcastUUID = UUIDArr[0] as! CBUUID
-                if broadcastUUID == messageServiceUUID {
+                if broadcastUUID == identifierServiceUUID {
                     print("Found messageServiceUUID UUID. Advertising_data: \(advertisementData)")
                     should_connect = true
                 }
@@ -42,20 +42,9 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                     }
                 }
             case is String:
-                print("UUID \(BUUID) found")
+                print("UUID \(UUID) found")
             default:
                 print("advert has incorrect UUID \(advertisementData)")
-            }
-        }
-        else if let name = advertisementData[CBAdvertisementDataLocalNameKey] {
-            switch name {
-            case "JasonChasez" as String:
-                print("Found JasonChasez. Attempting to connect.")
-                should_connect = true
-            case is String:
-                print("Found peripheral named \(name) with advertisement data \(advertisementData)")
-            default:
-                print("Somehow found name that is not string.")
             }
         }
         if should_connect == false {
@@ -63,6 +52,11 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         }
         
         let name = advertisementData[CBAdvertisementDataLocalNameKey]
+        
+        if (name == nil){
+            print("Found user with correct message service UUID, but without name. This is not acceptable.")
+            return
+        }
         
         let usr = user(name: name as! String, lastSeen: nil, peripheral: didDiscover) // should fail if they don't have name
         

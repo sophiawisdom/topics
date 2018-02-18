@@ -20,7 +20,6 @@ else
 endif
 
 SWIFTC      = $(shell xcrun -f swiftc)
-CLANG       = $(shell xcrun -f clang)
 SDK_PATH    = $(shell xcrun --show-sdk-path --sdk $(SDK))
 SWIFT_FILES = $(wildcard $(SRC_DIR)/*.swift)
 

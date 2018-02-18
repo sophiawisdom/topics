@@ -30,8 +30,26 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
 
         print("service: \(service)")
     }
+    func peripheralManager(_: CBPeripheralManager, didReceiveRead: CBATTRequest){
+        let characteristic = didReceiveRead.characteristic
+        if (characteristic.uuid != userReadCharacteristicUUID){
+            print("Received read request for characteristic other than userReadCharacteristic: \(characteristic)")
+            peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.attributeNotFound)
+            return
+        }
+        let users = central_man.connectedUsers
+        let responseData = NSMutableData(length: 0)! // length=0 because we will be appending
+        for user in users {
+            let userData = user.user_to_data()
+            var userLength = Int32(userData.length) // var so we can reference memory location
+            responseData.append(NSData(bytes: &userLength, length:4) as Data)
+            responseData.append(userData as Data)
+        }
+        didReceiveRead.value = responseData as Data
+        peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
+    }
     
-    func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) {
+    func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) { // In respond to write request
         let msg = data_to_message(_: didReceiveWrite[0].value! as NSData)
         print("User \(msg.sendingUser.name) sent me (\(msg.receivingUser.name)) a message: \(msg.messageText)")
         peripheralManager.respond(to: didReceiveWrite[0], withResult: CBATTError.Code.success)
@@ -42,34 +60,18 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
 
 }
 
-func start_advertising(periph_man: PeripheralMan!){
+func start_advertising(_ periph_man: PeripheralMan!){
     
-    
-    var queue: DispatchQueue!
-    if #available(OSX 10.10, *) {
-        queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
-    } else {
-        print("DispatchQueue not available on your version of MacOSX. Please update to 10.10 or greater.")
-    }
-    periph_man.peripheralManager = CBPeripheralManager(delegate: periph_man, queue: queue)
-    
-    while (!(periph_man.peripheralManager.state == .poweredOn)){
-        usleep(1000)
-    }
-    
-    let properties: CBCharacteristicProperties = [.notify, .read, .write]
-    let permissions: CBAttributePermissions = [.readable, .writeable]
-    let charUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20") //these UUIDS probably need to be changed
-    let serviceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
-    let someCharacteristic = CBMutableCharacteristic(type: charUUID, properties: properties, value: nil, permissions: permissions)
-    let someService = CBMutableService(type:serviceUUID, primary:true)
-    someService.characteristics = [someCharacteristic]
-    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[serviceUUID]]// probably the right format, thank apple for their definitely helpful documentation
+    let messageWriteCharacteristic = CBMutableCharacteristic(type: messageWriteCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
+    let userReadCharacteristic = CBMutableCharacteristic(type: userReadCharacteristicUUID, properties: [.read], value: nil, permissions: [.readable])
+    let identifierService = CBMutableService(type:identifierServiceUUID, primary:true)
+    identifierService.characteristics = [messageWriteCharacteristic, userReadCharacteristic] // The insight is that the characteristics are just headers
+    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]]
     print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
         if(!periph_man.peripheralManager.isAdvertising) {
-            periph_man.peripheralManager.removeAllServices()
-            periph_man.peripheralManager.add(someService)
+            periph_man.peripheralManager.removeAllServices() //?
+            periph_man.peripheralManager.add(identifierService)
             usleep(100000)
             periph_man.peripheralManager.startAdvertising(advertisementData)
             while (!periph_man.peripheralManager.isAdvertising){
