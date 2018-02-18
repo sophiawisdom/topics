@@ -15,7 +15,8 @@
  They are discovered by everyone around them, and when they connect they are added to the list of users and also asked for their firstSeen.
     This is necessary because firstSeen is effectively an identifier, and if everyone just got the time they received the advertisement there wouldn't be agreement on who was around. This identifier is just a number that needs to be unique. It doesn't need to stay the same over time, though that might be useful
  
- They are then added to the list of people to poll for
+ They are then added to the list of people to poll, and they are polled every ten seconds or so.
+ When they are polled they should give a list of all their users
  */
 
 import Foundation
@@ -71,7 +72,7 @@ else if periph_man.peripheralManager.state == .poweredOn {
 
 if #available(OSX 10.10,*){
     DispatchQueue.global(qos: .background).async { // Run background thread to update the list of users we have
-        update_user_list()
+        updateUserList()
     }
 }
 else {

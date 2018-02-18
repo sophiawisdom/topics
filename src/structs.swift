@@ -168,7 +168,7 @@ func send_message(_ otherUser:user,messageText:String){
     
 }
 
-func update_user_list(){ // Separate thread that runs and tries to continuously update
+func updateUserList(){ // Separate thread that runs and tries to continuously update
     print("update_user_list called")
     var lastAsked = [user: Double]() // don't ask more than every 10 seconds
     while (true){
@@ -198,7 +198,41 @@ func update_user_list(){ // Separate thread that runs and tries to continuously 
             peripheral.readValue(for: userCharacteristic!) // Calls peripheralDelegate when value is read
             lastAsked[user] = NSDate().timeIntervalSince1970
         }
-        usleep(1000000)
+        usleep(100000)
+    }
+}
+
+func start_advertising(_ periph_man: PeripheralMan!){
+    
+    var firstSeenn = selfUser.firstSeen
+    let firstSeen = NSData(bytes: &firstSeenn, length:4) as Data
+    
+    let messageWriteCharacteristic = CBMutableCharacteristic(type: messageWriteCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
+    let userReadCharacteristic = CBMutableCharacteristic(type: userReadCharacteristicUUID, properties: [.read], value: nil, permissions: [.readable])
+    let getFirstSeenCharacteristic = CBMutableCharacteristic(type: getFirstSeenCharacteristicUUID, properties: [.read], value: firstSeen, permissions: [.readable])
+    let identifierService = CBMutableService(type:identifierServiceUUID, primary:true)
+    
+    
+    identifierService.characteristics = [messageWriteCharacteristic, userReadCharacteristic, getFirstSeenCharacteristic] // The insight is that the characteristics are just headers
+    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]]
+    print("Advertising with data \(advertisementData)")
+    if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
+        if(!periph_man.peripheralManager.isAdvertising) {
+            periph_man.peripheralManager.removeAllServices() //?
+            periph_man.peripheralManager.add(identifierService)
+            usleep(100000)
+            periph_man.peripheralManager.startAdvertising(advertisementData)
+            while (!periph_man.peripheralManager.isAdvertising){
+                usleep(10000)
+            }
+        }
+        if (!periph_man.peripheralManager.isAdvertising){
+            print("Something went wrong. Peripheral manager is not advertising.")
+        } // Expect it to be advertising
+        
+    }
+    else {
+        print("PeripheralManager state is not powered on. Perhaps your bluetooth is off.")
     }
 }
 

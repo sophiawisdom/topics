@@ -1,6 +1,6 @@
 /* Mostly "inspired" by https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2 */
 import Foundation
-import CoreBluetooth
+import CoreBluetooth // Do we have to import these in every file?
 
 class CentralMan: NSObject, CBCentralManagerDelegate {
     var centralManager: CBCentralManager!
