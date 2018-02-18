@@ -13,10 +13,6 @@ struct user {
         self.lastSeen = getTime()
         self.name = name
         self.peripheral = peripheral
-        if firstSeen != nil {
-            firstSeenToUser[firstSeen!] = self
-        }
-        allUsers.append(self)
     }
     
     func user_to_data() -> NSData {
@@ -171,19 +167,23 @@ func send_message(_ otherUser:user,messageText:String){
     peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
     
 }
+
 func update_user_list(){ // Separate thread that runs and tries to continuously update
+    print("update_user_list called")
     var lastAsked = [user: Double]() // don't ask more than every 10 seconds
     while (true){
         for user in central_man.connectedUsers { // for each peripheral connected to
             
-            if (lastAsked[user]! - NSDate().timeIntervalSince1970) < 10 {
-                continue
+            if let lastAskedUser = lastAsked[user] {
+                if (lastAskedUser - NSDate().timeIntervalSince1970) < 10 {
+                    continue
+                }
             }
             
             let peripheral = user.peripheral!
             let service = peripheral.services![0]
-            var userCharacteristic: CBCharacteristic?
             
+            var userCharacteristic: CBCharacteristic?
             for characteristic in service.characteristics! {
                 if characteristic.uuid == userReadCharacteristicUUID {
                     userCharacteristic = characteristic
@@ -195,9 +195,13 @@ func update_user_list(){ // Separate thread that runs and tries to continuously 
                 continue
             }
             
-            peripheral.readValue(for: userCharacteristic!) // Calls peripheralManager when value is read
+            peripheral.readValue(for: userCharacteristic!) // Calls peripheralDelegate when value is read
             lastAsked[user] = NSDate().timeIntervalSince1970
         }
         usleep(1000000)
     }
+}
+
+func receiveMessage(_ msg: message){
+    print("\(msg.sendingUser.name): \(msg.messageText)")
 }

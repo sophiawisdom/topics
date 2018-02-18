@@ -66,6 +66,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         
         connectedUsers.append(usr)
         peripheralUsers[peripheral] = usr
+        allUsers.append(usr)
         
         print("Connected to user with name \(usr.name)")
     }
@@ -114,6 +115,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
+        
         if didUpdateValueFor.uuid == getFirstSeenCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
             print("got getFirstSeenCharacteristicUUID value. Value == \(didUpdateValueFor.value!)")
             var usr = central_man.peripheralUsers[peripheral]!
@@ -121,6 +123,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             usr.firstSeen = value.bytes.load(as:Int64.self)
             firstSeenToUser[usr.firstSeen!] = usr
         }
+        
         else if didUpdateValueFor.uuid == userReadCharacteristicUUID { // Sending us their user list to update
             let data = didUpdateValueFor.value! as NSData
             var users = [user]()
@@ -130,8 +133,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
                 let length = Int(data.bytes.load(fromByteOffset: offset, as:Int32.self))
                 offset += 4
                 let range = NSMakeRange(offset,length)
-                let usr = data_to_user(data.subdata(with: range) as NSData)
-                users.append(usr)
+                users.append(data_to_user(data.subdata(with: range) as NSData)) // If length is set wrong or if we read text data as int, then this will crash the program
                 offset += length
             }
             

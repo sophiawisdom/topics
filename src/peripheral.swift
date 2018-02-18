@@ -60,13 +60,12 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     
     func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) { // In respond to write request
         let msg = data_to_message(_: didReceiveWrite[0].value! as NSData)
-        print("User \(msg.sendingUser.name) sent me (\(msg.receivingUser.name)) a message: \(msg.messageText)")
+        receiveMessage(msg)
         peripheralManager.respond(to: didReceiveWrite[0], withResult: CBATTError.Code.success)
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
     }
-
 }
 
 func start_advertising(_ periph_man: PeripheralMan!){

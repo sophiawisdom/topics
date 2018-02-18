@@ -12,11 +12,11 @@
 
 /* Okay let's trace back the user propogation process
  first a new user starts up and starts advertising
- They are discovered by everyone around them, and when they connect they are added to the list of users and also asked for their firstSeen. This is necessary because firstSeen is effectively an
- identifier, and if everyone just got the time they received the advertisement there wouldn't be agreement on who was around.
- They are then added to the list of people to poll
+ They are discovered by everyone around them, and when they connect they are added to the list of users and also asked for their firstSeen.
+    This is necessary because firstSeen is effectively an identifier, and if everyone just got the time they received the advertisement there wouldn't be agreement on who was around. This identifier is just a number that needs to be unique. It doesn't need to stay the same over time, though that might be useful
+ 
+ They are then added to the list of people to poll for
  */
-
 
 import Foundation
 import CoreBluetooth
@@ -36,6 +36,7 @@ if #available(OSX 10.10, *) {
     queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
 } else {
     print("This program can only be run on OSX 10.10 or greater. Please update.")
+    exit(1)
 }
 central_man.centralManager = CBCentralManager(delegate: central_man, queue: queue)
 
@@ -44,6 +45,7 @@ if #available(OSX 10.10, *) {
     queue2 = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
 } else {
     print("This program can only be run on OSX 10.10 or greater. Please update.")
+    exit(1)
 }
 periph_man.peripheralManager = CBPeripheralManager(delegate: periph_man, queue: queue2)
 
@@ -67,22 +69,23 @@ else if periph_man.peripheralManager.state == .poweredOn {
     central_man.centralManager.scanForPeripherals(withServices:nil)
 }
 
-central_man.connectedUsers.append(selfUser) // Need to include self for list of users
-DispatchQueue.global(qos: .background).async { // Run background thread to update the list of users we have
-    
-    update_user_list()
-    
-    DispatchQueue.main.async {
+if #available(OSX 10.10,*){
+    DispatchQueue.global(qos: .background).async { // Run background thread to update the list of users we have
+        update_user_list()
     }
 }
+else {
+    print("This program can only be run on OSX 10.10 or greater. Please update.")
+    exit(1)
+}
 
-
+print("Waiting for users to connect.")
 while (central_man.connectedUsers.count == 0){
-    usleep(1000)
+    usleep(100000)
 }
 
 let receivingUser = central_man.connectedUsers[0]
-print("SENDING TEXT TO \(receivingUser)")
+print("Found user to connect to! Now sending text to \(receivingUser)")
 
 var to_send: String
 while (true){
