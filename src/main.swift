@@ -15,15 +15,17 @@
  They are discovered by everyone around them, and when they connect they are added to the list of users and also asked for their firstSeen.
     This is necessary because firstSeen is effectively an identifier, and if everyone just got the time they received the advertisement there wouldn't be agreement on who was around. This identifier is just a number that needs to be unique. It doesn't need to stay the same over time, though that might be useful
  
- They are then added to the list of people to poll, and they are polled every ten seconds or so.
- When they are polled they should give a list of all their users
+ They are then added to the list of people to poll, and they are polled every second or so.
+ When they are polled they should give a list of all their users, which are then added to the list of users if they have a unique firstSeen identifier
+ Then, when someone else polls you, you give them a list of all your users which has been updated. In this way, information propogates through the network at a minimum pace of 1s/node. Even if there are ten nodes in between two people, it should take only ten seconds before they see each other.
  */
 
 import Foundation
 import CoreBluetooth
 
 let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
-let messageWriteCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
+let messageWriteDirectCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
+let messageWriteOtherCharacteristicUUID = CBUUID(string: "6f083e6a-8a09-468f-898e-b16755a1bf61")
 let userReadCharacteristicUUID = CBUUID(string: "b8e0fee5-d132-4410-a09f-e584e64a115d")
 let getFirstSeenCharacteristicUUID = CBUUID(string: "7ade0d09-f195-4afe-b476-675ee4476ddf")
 
@@ -88,9 +90,9 @@ while (central_man.connectedUsers.count == 0){
 let receivingUser = central_man.connectedUsers[0]
 print("Found user to connect to! Now sending text to \(receivingUser)")
 
-var to_send: String
+var toSend: String
 while (true){
-    to_send = readLine()!
-    print("Sending message \(to_send) to peripheral \(receivingUser.name)")
-    send_message(receivingUser, messageText: to_send)
+    toSend = readLine()!
+    print("Sending message \(toSend) to peripheral \(receivingUser.name)")
+    send_message(receivingUser, messageText: toSend)
 }

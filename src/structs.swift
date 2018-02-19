@@ -27,9 +27,11 @@ struct user {
         return messageData
     }
 }
+
 func getTime() -> Int64 {
     return Int64(NSDate().timeIntervalSince1970 * 1000)
 }
+
 extension user: Hashable {
     
     var hashValue: Int {
@@ -51,11 +53,6 @@ extension user: Hashable {
         }
     }
 }
-
-let name = Host.current().localizedName ?? ""
-let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
-var allUsers = [user]()
-var firstSeenToUser = [Int64: user]()
 
 func data_to_user(_ data: NSData) -> user {
     let firstSeen = data.bytes.load(as:Int64.self)
@@ -109,6 +106,19 @@ struct message {
         
     }
 }
+extension message: Hashable {
+    
+    var hashValue: Int {
+        return sendingUser.hashValue + receivingUser.hashValue + messageText.hashValue + timeSent.hashValue
+    }
+    
+    static func == (first: message, second: message) -> Bool {
+        let usr = (first.sendingUser == second.sendingUser) && (first.receivingUser == second.receivingUser)
+        let msg = first.messageText == second.messageText
+        let time = first.timeSent == second.timeSent
+        return usr && msg && time // Maybe this is too time inefficient?
+    }
+}
 
 func data_to_message(_ data: NSData) -> message {
     let bytes = data.bytes
@@ -131,40 +141,36 @@ func data_to_message(_ data: NSData) -> message {
     
 }
 
-func send_message(_ otherUser:user,messageText:String){
-    var peripheral = otherUser.peripheral
-    if (peripheral == nil) {
-        print("You tried to send a message to \(otherUser) but they have no peripheral. This probably means they are a user we are connected through by an intermediary. Messaging is not implemented yet.")
-        return
-    }
-    peripheral = peripheral!
-    
-    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:getTime())
-    
+func getCharacteristic(_ peripheral:CBPeripheral, characteristicUUID: CBUUID) -> CBCharacteristic {
+    var writeCharacteristic: CBCharacteristic!
     var service_to_write: CBService! // To find the write characteristic you have to find the service
-    for service in peripheral!.services! {
+    for service in peripheral.services! {
         if (service.uuid == identifierServiceUUID){
             service_to_write = service
         }
     }
     if (service_to_write == nil){ // didn't find one
         print("Not able to find message service")
-        return
+        return writeCharacteristic
     }
     
-    var characteristic_to_write: CBCharacteristic! // And then find the characteristic
     for characteristic in service_to_write.characteristics! {
-        if (characteristic.uuid == messageWriteCharacteristicUUID){
-            characteristic_to_write = characteristic
+        if (characteristic.uuid == characteristicUUID){
+            writeCharacteristic = characteristic
         }
     }
-    if (characteristic_to_write == nil) { // didn't find one
-        print("Not able to find message characteristic")
+    return writeCharacteristic
+}
+
+func send_message(_ otherUser:user,messageText:String){
+    if (otherUser.peripheral == nil) {
+        print("You tried to send a message to \(otherUser) but they have no peripheral. This probably means they are a user we are connected through by an intermediary. Messaging is not implemented yet.")
         return
     }
-    characteristic_to_write = characteristic_to_write!
+    let characteristic = getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
+    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:getTime())
     
-    peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic_to_write, type: CBCharacteristicWriteType.withResponse)
+    otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
     
 }
 
@@ -172,10 +178,11 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
     print("update_user_list called")
     var lastAsked = [user: Double]() // don't ask more than every 10 seconds
     while (true){
+        
         for user in central_man.connectedUsers { // for each peripheral connected to
             
             if let lastAskedUser = lastAsked[user] {
-                if (lastAskedUser - NSDate().timeIntervalSince1970) < 10 {
+                if (lastAskedUser - NSDate().timeIntervalSince1970) < 1 {
                     continue
                 }
             }
@@ -207,13 +214,14 @@ func start_advertising(_ periph_man: PeripheralMan!){
     var firstSeenn = selfUser.firstSeen
     let firstSeen = NSData(bytes: &firstSeenn, length:4) as Data
     
-    let messageWriteCharacteristic = CBMutableCharacteristic(type: messageWriteCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
+    let messageWriteDirectCharacteristic = CBMutableCharacteristic(type: messageWriteDirectCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let userReadCharacteristic = CBMutableCharacteristic(type: userReadCharacteristicUUID, properties: [.read], value: nil, permissions: [.readable])
     let getFirstSeenCharacteristic = CBMutableCharacteristic(type: getFirstSeenCharacteristicUUID, properties: [.read], value: firstSeen, permissions: [.readable])
+    let messageWriteOtherCharacteristic = CBMutableCharacteristic(type: messageWriteOtherCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let identifierService = CBMutableService(type:identifierServiceUUID, primary:true)
     
     
-    identifierService.characteristics = [messageWriteCharacteristic, userReadCharacteristic, getFirstSeenCharacteristic] // The insight is that the characteristics are just headers
+    identifierService.characteristics = [messageWriteDirectCharacteristic, userReadCharacteristic, getFirstSeenCharacteristic,messageWriteOtherCharacteristic] // The insight is that the characteristics are just headers
     let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]]
     print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
@@ -237,5 +245,17 @@ func start_advertising(_ periph_man: PeripheralMan!){
 }
 
 func receiveMessage(_ msg: message){
-    print("\(msg.sendingUser.name): \(msg.messageText)")
+    if (msg.receivingUser == selfUser) {
+        print("\(msg.sendingUser.name): \(msg.messageText)") // more processing later
+        return
+    }
+    else {
+        print("Receivied message sent by \(msg.sendingUser.name) to \(msg.receivingUser.name). This is a bug and should not happen.")
+    }
 }
+
+let name = Host.current().localizedName ?? ""
+let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
+var allUsers = [user]()
+var firstSeenToUser = [Int64: user]()
+var recentMessages: Set<message> = []

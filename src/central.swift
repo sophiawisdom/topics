@@ -17,7 +17,9 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     }
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        
     }
+    
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
         // We've found a peripheral; should we connect?
         var should_connect = false
@@ -28,6 +30,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                 should_connect = true
             case is NSMutableArray:
                 let UUIDArr = UUID as! NSMutableArray
+                print("Attempting to unwrapping UUIDarr: \(UUIDArr)")
                 let broadcastUUID = UUIDArr[0] as! CBUUID
                 if broadcastUUID == identifierServiceUUID {
                     print("Found messageServiceUUID UUID. Advertising_data: \(advertisementData)")
@@ -36,12 +39,12 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                 else {
                     if #available(OSX 10.10, *){
                         print("Encountered peripheral with UUID \(broadcastUUID.uuidString)")
-                    
                     }
                     else {
                         print("Encountered peripheral with UUID \(broadcastUUID)")
                     }
                 }
+                print("Debug!")
             case is String:
                 print("UUID \(UUID) found")
             default:
@@ -58,8 +61,10 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             print("Found user with correct message service UUID, but without name. This is not acceptable.")
             return
         }
+        let nameStr = String(data: name as! Data, encoding: .utf8)
+        print("Name is \(nameStr!)")
         
-        let usr = user(name: name as! String, firstSeen: 0, peripheral: didDiscover) // should fail if they don't have name
+        let usr = user(name: nameStr!, firstSeen: 0, peripheral: didDiscover) // should fail if they don't have name
         
         didDiscover.delegate = del
         centralManager.connect(didDiscover, options: nil)

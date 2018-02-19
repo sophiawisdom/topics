@@ -59,9 +59,36 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
     
     func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) { // In respond to write request
-        let msg = data_to_message(_: didReceiveWrite[0].value! as NSData)
-        receiveMessage(msg)
-        peripheralManager.respond(to: didReceiveWrite[0], withResult: CBATTError.Code.success)
+        for request in didReceiveWrite {
+            if (request.characteristic.uuid == messageWriteDirectCharacteristicUUID) {
+                let msg = data_to_message(_: request.value! as NSData)
+                receiveMessage(msg)
+                peripheralManager.respond(to: request, withResult: CBATTError.Code.success)
+            }
+            else if (request.characteristic.uuid == messageWriteOtherCharacteristicUUID){
+                let msg = data_to_message(_: didReceiveWrite[0].value! as NSData)
+                if msg.receivingUser == selfUser {
+                    receiveMessage(msg)
+                }
+                else if msg.sendingUser == selfUser {
+                    print("Received message sent by us. This is a bug and should not happen")
+                }
+                else { // Message sent by somebody else to somebody else - we should help route.
+                    // Check if we've already seen the message
+                    let alreadySeen = recentMessages.contains(msg)
+                    if alreadySeen == true {
+                        peripheralManager.respond(to: request, withResult: CBATTError.Code.success) // Don't propogate the message any more
+                    }
+                    else {
+                        recentMessages.insert(msg)
+                        for user in central_man.connectedUsers {
+                            let writeCharacteristic = getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
+                            user.peripheral!.writeValue(msg.message_to_data() as Data, for: writeCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
