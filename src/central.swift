@@ -133,6 +133,8 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
         print("Discovered value")
+        usleep(1000000)
+        print("Discovered value again!")
         
         if didUpdateValueFor.uuid == getFirstSeenCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
             var usr = central_man.peripheralUsers[peripheral]!

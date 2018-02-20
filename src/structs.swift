@@ -8,10 +8,10 @@ struct user {
     let peripheral: CBPeripheral?
     
     
-    init(name: String, firstSeen: Int64?, peripheral: CBPeripheral?) {
+    init(name: String, firstSeen: Int64?, peripheral: CBPeripheral?) { // Names can only be 8 letters long
         self.firstSeen = firstSeen
         self.lastSeen = getTime()
-        self.name = name
+        self.name = String(name.prefix(8))
         self.peripheral = peripheral
     }
     
@@ -44,12 +44,13 @@ extension user: Hashable {
     }
     
     static func == (first: user, second: user) -> Bool {
+        
         if (first.firstSeen == nil || second.firstSeen == nil){
             return (first.name == second.name)
         }
+            
         else{
             return (first.name == second.name) && (first.firstSeen! == second.firstSeen!)
-        
         }
     }
 }
