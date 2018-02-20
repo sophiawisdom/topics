@@ -47,7 +47,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         else if (characteristic.uuid == getFirstSeenCharacteristicUUID){
             
             var firstSeenn = selfUser.firstSeen
-            let firstSeen = NSData(bytes: &firstSeenn, length:4) as Data
+            let firstSeen = NSData(bytes: &firstSeenn, length:8) as Data
             didReceiveRead.value = firstSeen
             
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)

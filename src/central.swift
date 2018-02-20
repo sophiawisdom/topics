@@ -133,10 +133,10 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         print("Discovered value")
         
         if didUpdateValueFor.uuid == getFirstSeenCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
-            print("got getFirstSeenCharacteristicUUID value. Value == \(didUpdateValueFor.value!)")
             var usr = central_man.peripheralUsers[peripheral]!
             let value = didUpdateValueFor.value! as NSData // data type, have to convert to int
             usr.firstSeen = value.bytes.load(as:Int64.self)
+            print("firstSeen for user \(usr.name) = \(usr.firstSeen)")
             firstSeenToUser[usr.firstSeen!] = usr
         }
         

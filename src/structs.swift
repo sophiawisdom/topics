@@ -261,12 +261,14 @@ func start_advertising(_ periph_man: PeripheralMan!){
 }
 
 func receiveMessage(_ msg: message){
+    
     if (msg.receivingUser == selfUser) {
         print("\(msg.sendingUser.name): \(msg.messageText)") // more processing later
         return
     }
     else {
-        print("receiveMessage called on message sent by \(msg.sendingUser.name) to \(msg.receivingUser.name). This is a bug and should not happen.")
+        print("receiving user: \(msg.receivingUser)")
+//        print("receiveMessage called on message sent by \(msg.sendingUser) to \(msg.receivingUser). This is a bug and should not happen.")
     }
 }
 
