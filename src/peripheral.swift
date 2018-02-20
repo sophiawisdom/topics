@@ -32,6 +32,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
     func peripheralManager(_: CBPeripheralManager, didReceiveRead: CBATTRequest){
         let characteristic = didReceiveRead.characteristic
+        print("Received read: \(didReceiveRead)")
         if (characteristic.uuid == userReadCharacteristicUUID){
             print("Attempted to get update user list")
             let users = central_man.connectedUsers

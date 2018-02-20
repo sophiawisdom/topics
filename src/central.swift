@@ -109,12 +109,13 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         let characteristics = didDiscoverCharacteristicsFor.characteristics!
         for characteristic in characteristics {
             if characteristic.uuid == getInitialUserCharacteristicUUID {
+                print("Calling readValue for characteristic \(characteristic)")
                 peripheral.readValue(for: characteristic)
             }
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
-        print("Discovered value")
+        print("Discovered value for characteristic \(didUpdateValueFor)")
         
         if didUpdateValueFor.uuid == getInitialUserCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
             print("data: \(didUpdateValueFor.value! as NSData)")

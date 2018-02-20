@@ -232,12 +232,9 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
 
 func start_advertising(_ periph_man: PeripheralMan!){
     
-    var firstSeenn = selfUser.firstSeen
-    let firstSeen = NSData(bytes: &firstSeenn, length:4) as Data
-    
     let messageWriteDirectCharacteristic = CBMutableCharacteristic(type: messageWriteDirectCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let userReadCharacteristic = CBMutableCharacteristic(type: userReadCharacteristicUUID, properties: [.read], value: nil, permissions: [.readable])
-    let getInitialUserCharacteristic = CBMutableCharacteristic(type: getInitialUserCharacteristicUUID, properties: [.read], value: firstSeen, permissions: [.readable])
+    let getInitialUserCharacteristic = CBMutableCharacteristic(type: getInitialUserCharacteristicUUID, properties: [.read], value: selfUser.user_to_data() as Data, permissions: [.readable])
     let messageWriteOtherCharacteristic = CBMutableCharacteristic(type: messageWriteOtherCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let identifierService = CBMutableService(type:identifierServiceUUID, primary:true)
     
