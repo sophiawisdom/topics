@@ -267,7 +267,7 @@ func receiveMessage(_ msg: message){
         return
     }
     else {
-        print("receiving user: \(msg.receivingUser)")
+        print("receiving user: \(msg.receivingUser) self user: \(selfUser) sending user: \(msg.sendingUser)")
 //        print("receiveMessage called on message sent by \(msg.sendingUser) to \(msg.receivingUser). This is a bug and should not happen.")
     }
 }

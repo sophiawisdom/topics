@@ -73,12 +73,14 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         didDiscover.delegate = del
         centralManager.connect(didDiscover, options: nil)
         
-        print("Starting to do appending")
+        central_man.peripheralUsers[usr.peripheral!] = usr
+        
+/*        print("Starting to do appending")
         connectedUsers.append(usr)
         print("Appended to connectedUsers")
         peripheralUsers[didDiscover] = usr
         print("Inserted into dictionary")
-        allUsers.append(usr)
+        allUsers.append(usr)*/
         
         print("Connected to user with name \(usr.name)")
     }
@@ -138,6 +140,12 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             usr.firstSeen = value.bytes.load(as:Int64.self)
             print("firstSeen for user \(usr.name) = \(usr.firstSeen)")
             firstSeenToUser[usr.firstSeen!] = usr
+            print("Starting to do appending")
+            central_man.connectedUsers.append(usr)
+            print("Appended to connectedUsers")
+            central_man.peripheralUsers[usr.peripheral!] = usr
+            print("Inserted into dictionary")
+            allUsers.append(usr)
         }
         
         else if didUpdateValueFor.uuid == userReadCharacteristicUUID { // Sending us their user list to update
