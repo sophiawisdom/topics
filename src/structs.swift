@@ -163,12 +163,15 @@ func getCharacteristic(_ peripheral:CBPeripheral, characteristicUUID: CBUUID) ->
 }
 
 func send_message(_ otherUser:user,messageText:String){
-    if (otherUser.peripheral == nil) {
+    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:getTime())
+    if (otherUser.peripheral == nil) { // Have to route message to them instead of direct send
         print("You tried to send a message to \(otherUser) but they have no peripheral. This probably means they are a user we are connected through by an intermediary. Messaging is not implemented yet.")
-        return
+        for user in central_man.connectedUsers {
+            let characteristic = getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
+            user.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+        }
     }
     let characteristic = getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
-    let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:getTime())
     
     otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
     
@@ -250,7 +253,7 @@ func receiveMessage(_ msg: message){
         return
     }
     else {
-        print("Receivied message sent by \(msg.sendingUser.name) to \(msg.receivingUser.name). This is a bug and should not happen.")
+        print("receiveMessage called on message sent by \(msg.sendingUser.name) to \(msg.receivingUser.name). This is a bug and should not happen.")
     }
 }
 
