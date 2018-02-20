@@ -47,7 +47,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         else if (characteristic.uuid == getInitialUserCharacteristicUUID){
             
             didReceiveRead.value = selfUser.user_to_data() as Data
-            print("Other user is attempting to read our firstSeen value. we are sending them back int: \(didReceiveRead.value)")
+            print("Other user is attempting to read our firstSeen value. we are sending them back int: \(didReceiveRead.value!)")
             
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
         }

@@ -202,7 +202,7 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
 //            print("Got through optionals")
             
             let peripheral = usr.peripheral!
-            print("Getting services: \(peripheral.services)")
+            print("Getting services: \(peripheral.services!)")
             let service = peripheral.services![0]
             
 //            print("Got past initialization")
