@@ -33,6 +33,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     func peripheralManager(_: CBPeripheralManager, didReceiveRead: CBATTRequest){
         let characteristic = didReceiveRead.characteristic
         if (characteristic.uuid == userReadCharacteristicUUID){
+            print("Attempted to get update user list")
             let users = central_man.connectedUsers
             let responseData = NSMutableData(length: 0)! // length=0 because we will be appending
             for user in users {
@@ -47,7 +48,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         else if (characteristic.uuid == getInitialUserCharacteristicUUID){
             
             didReceiveRead.value = selfUser.user_to_data() as Data
-            print("Other user is attempting to read our firstSeen value. we are sending them back int: \(didReceiveRead.value!)")
+            print("Other user is attempting to read our firstSeen value. we are sending them back data: \(didReceiveRead.value!)")
             
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
         }

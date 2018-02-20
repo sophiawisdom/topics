@@ -10,6 +10,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var peripheralUsers = [CBPeripheral: user]()
     let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
     let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
+    var knownPeripherals = [CBPeripheral]()
     
     override init() {
         super.init()
@@ -63,6 +64,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         didDiscover.delegate = del
         centralManager.connect(didDiscover, options: nil) // User object is transferred as a whole, not attempted to be inferred.
         print("Finished function")
+        knownPeripherals.append(didDiscover)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) { // When someone is connected to
@@ -115,6 +117,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         print("Discovered value")
         
         if didUpdateValueFor.uuid == getInitialUserCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
+            print("data: \(didUpdateValueFor.value! as NSData)")
             var usr = data_to_user(didUpdateValueFor.value! as NSData) // data type, have to convert to int
             usr.peripheral = peripheral
             print("Updated value for new connected user. Got user \(usr)")
@@ -126,6 +129,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
         
         else if didUpdateValueFor.uuid == userReadCharacteristicUUID { // Sending us their user list to update
+            print("Getting user list")
             let data = didUpdateValueFor.value! as NSData
             var users = [user]()
             var offset = 0
