@@ -22,8 +22,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentral, didFailToConnect peripheral: CBPeripheral, error: Error?){
-        print("Failed to connect to peripheral")
-        print("Failed to connect to peripheral \(peripheral) \(error)")
+        print("Failed to connect to peripheral \(peripheral) because of error \(error)")
     }
     
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan

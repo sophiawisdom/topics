@@ -83,6 +83,16 @@ else {
     exit(1)
 }*/
 
+let usr1 = makeDummyUser()
+usleep(1000)
+let usr2 = makeDummyUser()
+usleep(1000)
+let usr3 = makeDummyUser()
+usleep(1000)
+let usr4 = makeDummyUser()
+usleep(1000)
+let usr5 = makeDummyUser()
+
 print("Waiting for users to connect.")
 while (central_man.connectedUsers.count == 0){
     usleep(100000)

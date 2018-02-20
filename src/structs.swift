@@ -262,6 +262,32 @@ func start_advertising(_ periph_man: PeripheralMan!){
     }
 }
 
+func randomString(length: Int) -> String {
+    
+    let letters : NSString = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    let len = UInt32(letters.length)
+    
+    var randomString = ""
+    
+    for _ in 0 ..< length {
+        let rand = arc4random_uniform(len)
+        var nextChar = letters.character(at: Int(rand))
+        randomString += NSString(characters: &nextChar, length: 1) as String
+    }
+    
+    return randomString
+}
+
+func makeDummyUser() -> user{ // for testing purposes
+    let name = randomString(length: 10)
+    let usr = user(name:name, firstSeen:getTime(), peripheral:nil)
+    allUsers.append(usr)
+    firstSeenToUser[usr.firstSeen!] = usr
+    print("Generated dummy user \(usr)")
+    return usr
+}
+
+
 func receiveMessage(_ msg: message){
     
     if (msg.receivingUser == selfUser) {
