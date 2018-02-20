@@ -183,7 +183,12 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
     while (true){
         
         for user in central_man.connectedUsers { // for each peripheral connected to
-            print("Just started updateUserList loop")
+            if (user.firstSeen == 0){
+                usleep(100000)
+                continue
+            }
+            
+            print("Just started updateUserList loop for user \(user.firstSeen)")
             if let lastAskedUser = lastAsked[user] {
                 if (lastAskedUser - NSDate().timeIntervalSince1970) < 1 {
                     continue
@@ -192,6 +197,7 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
             print("Got through optionals")
             
             let peripheral = user.peripheral!
+            print("Getting services: \(peripheral.services)")
             let service = peripheral.services![0]
             
             print("Got past initialization")
