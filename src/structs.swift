@@ -243,7 +243,7 @@ func start_advertising(_ periph_man: PeripheralMan!){
     
     
     identifierService.characteristics = [messageWriteDirectCharacteristic, userReadCharacteristic, getInitialUserCharacteristic ,messageWriteOtherCharacteristic] // The insight is that the characteristics are just headers
-    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]] // Name doesn't matter
+    let advertisementData: [String : Any] = [CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]] // Name doesn't matter
     print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
         if(!periph_man.peripheralManager.isAdvertising) {

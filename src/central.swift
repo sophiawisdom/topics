@@ -20,6 +20,11 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         
     }
     
+    func centralManager(_ central: CBCentral, didFailToConnect peripheral: CBPeripheral, error: Error?){
+        print("Failed to connect to peripheral")
+        print("Failed to connect to peripheral \(peripheral) \(error)")
+    }
+    
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
         // We've found a peripheral; should we connect?
         var should_connect = false
@@ -54,8 +59,10 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             return
         }
         
+        print("About to attempt to connect. should_connect is \(should_connect)")
         didDiscover.delegate = del
         centralManager.connect(didDiscover, options: nil) // User object is transferred as a whole, not attempted to be inferred.
+        print("Finished function")
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) { // When someone is connected to

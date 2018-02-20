@@ -35,7 +35,6 @@ let central_man = CentralMan()
 let periph_man = PeripheralMan()
 
 
-testUserData()
 var queue: DispatchQueue!
 if #available(OSX 10.10, *) {
     queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
@@ -74,7 +73,7 @@ else if periph_man.peripheralManager.state == .poweredOn {
     central_man.centralManager.scanForPeripherals(withServices:nil)
 }
 
-if #available(OSX 10.10,*){
+/*if #available(OSX 10.10,*){
     DispatchQueue.global(qos: .background).async { // Run background thread to update the list of users we have
         updateUserList()
     }
@@ -82,7 +81,7 @@ if #available(OSX 10.10,*){
 else {
     print("This program can only be run on OSX 10.10 or greater. Please update.")
     exit(1)
-}
+}*/
 
 print("Waiting for users to connect.")
 while (central_man.connectedUsers.count == 0){
