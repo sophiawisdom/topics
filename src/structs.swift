@@ -179,28 +179,32 @@ func send_message(_ otherUser:user,messageText:String){
 
 func updateUserList(){ // Separate thread that runs and tries to continuously update
     print("update_user_list called")
-    var lastAsked = [user: Double]() // don't ask more than every 10 seconds
+    var lastAsked = [user: Int64]() // don't ask more than every 10 seconds
     while (true){
         
-        for user in central_man.connectedUsers { // for each peripheral connected to
-            if (user.firstSeen == 0){
+        for usr in central_man.connectedUsers { // for each peripheral connected to
+            if (usr.firstSeen == 0){
                 usleep(100000)
                 continue
             }
             
-            print("Just started updateUserList loop for user \(user.firstSeen)")
-            if let lastAskedUser = lastAsked[user] {
-                if (lastAskedUser - NSDate().timeIntervalSince1970) < 1 {
+//            print("Just started updateUserList loop for user \(user.firstSeen)")
+            
+            if let lastAskedUser = lastAsked[usr] {
+                if (lastAskedUser - getTime()) < 1000 {
                     continue
                 }
             }
-            print("Got through optionals")
+            else {
+                lastAsked[usr] = getTime()
+            }
+//            print("Got through optionals")
             
-            let peripheral = user.peripheral!
+            let peripheral = usr.peripheral!
             print("Getting services: \(peripheral.services)")
             let service = peripheral.services![0]
             
-            print("Got past initialization")
+//            print("Got past initialization")
             
             var userCharacteristic: CBCharacteristic?
             for characteristic in service.characteristics! {
@@ -209,17 +213,17 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
                 }
             }
             
-            print("Found characteristic")
+//            print("Found characteristic")
             
             if userCharacteristic == nil {
-                print("While trying to update user list from \(user), was unable to find userReadCharacteristic")
+                print("While trying to update user list from \(usr), was unable to find userReadCharacteristic")
                 continue
             }
             
-            print("Reading value")
+ //           print("Reading value")
             
             peripheral.readValue(for: userCharacteristic!) // Calls peripheralDelegate when value is read
-            lastAsked[user] = NSDate().timeIntervalSince1970
+            lastAsked[usr] = getTime()
         }
         usleep(100000)
     }
