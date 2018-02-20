@@ -183,15 +183,18 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
     while (true){
         
         for user in central_man.connectedUsers { // for each peripheral connected to
-            
+            print("Just started updateUserList loop")
             if let lastAskedUser = lastAsked[user] {
                 if (lastAskedUser - NSDate().timeIntervalSince1970) < 1 {
                     continue
                 }
             }
+            print("Got through optionals")
             
             let peripheral = user.peripheral!
             let service = peripheral.services![0]
+            
+            print("Got past initialization")
             
             var userCharacteristic: CBCharacteristic?
             for characteristic in service.characteristics! {
@@ -200,10 +203,14 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
                 }
             }
             
+            print("Found characteristic")
+            
             if userCharacteristic == nil {
                 print("While trying to update user list from \(user), was unable to find userReadCharacteristic")
                 continue
             }
+            
+            print("Reading value")
             
             peripheral.readValue(for: userCharacteristic!) // Calls peripheralDelegate when value is read
             lastAsked[user] = NSDate().timeIntervalSince1970

@@ -44,7 +44,6 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
                         print("Encountered peripheral with UUID \(broadcastUUID)")
                     }
                 }
-                print("Debug!")
             case is String:
                 print("UUID \(UUID) found")
             default:
@@ -55,28 +54,37 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             return
         }
         
-        let name = advertisementData[CBAdvertisementDataLocalNameKey]
+        print("Attempting to cast name to string")
+        let name = advertisementData[CBAdvertisementDataLocalNameKey] as! String
+        print("Attempting to cast name to string 2")
         
         if (name == nil){
             print("Found user with correct message service UUID, but without name. This is not acceptable.")
             return
         }
-        let nameStr = String(data: name as! Data, encoding: .utf8)
-        print("Name is \(nameStr!)")
         
-        let usr = user(name: nameStr!, firstSeen: 0, peripheral: didDiscover) // should fail if they don't have name
+//        let nameStr = String(data: name, encoding: .utf8)
+        print("Name is \(name)")
+        
+        let usr = user(name: name, firstSeen: 0, peripheral: didDiscover) // should fail if they don't have name
+        
+        print("Just made user object")
         
         didDiscover.delegate = del
         centralManager.connect(didDiscover, options: nil)
         
+        print("Starting to do appending")
         connectedUsers.append(usr)
-        peripheralUsers[peripheral] = usr
+        print("Appended to connectedUsers")
+        peripheralUsers[didDiscover] = usr
+        print("Inserted into dictionary")
         allUsers.append(usr)
         
         print("Connected to user with name \(usr.name)")
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) { // When someone is connected to
+        print("Just connected")
         didConnect.discoverServices([messageServiceUUID])
     }
     
@@ -96,6 +104,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?)
     {
+        print("Discovered services")
         if (peripheral.name != nil){
             print("Services have been found for peripheral \(peripheral.name!)")
         }
@@ -112,6 +121,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         
     }
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor: CBService, error: Error?){
+        print("Discovered charactertistics")
         let characteristics = didDiscoverCharacteristicsFor.characteristics!
         for characteristic in characteristics {
             if characteristic.uuid == getFirstSeenCharacteristicUUID {
@@ -120,6 +130,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
+        print("Discovered value")
         
         if didUpdateValueFor.uuid == getFirstSeenCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
             print("got getFirstSeenCharacteristicUUID value. Value == \(didUpdateValueFor.value!)")
