@@ -54,35 +54,8 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
             return
         }
         
-        print("Attempting to cast name to string")
-        let name = advertisementData[CBAdvertisementDataLocalNameKey] as! String
-        print("Attempting to cast name to string 2")
-        
-        if (name == nil){
-            print("Found user with correct message service UUID, but without name. This is not acceptable.")
-            return
-        }
-        
-//        let nameStr = String(data: name, encoding: .utf8)
-        print("Name is \(name)")
-        
-        let usr = user(name: name, firstSeen: 0, peripheral: didDiscover) // should fail if they don't have name
-        
-        print("Just made user object")
-        
         didDiscover.delegate = del
-        centralManager.connect(didDiscover, options: nil)
-        
-        central_man.peripheralUsers[usr.peripheral!] = usr
-        
-/*        print("Starting to do appending")
-        connectedUsers.append(usr)
-        print("Appended to connectedUsers")
-        peripheralUsers[didDiscover] = usr
-        print("Inserted into dictionary")
-        allUsers.append(usr)*/
-        
-        print("Connected to user with name \(usr.name)")
+        centralManager.connect(didDiscover, options: nil) // User object is transferred as a whole, not attempted to be inferred.
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) { // When someone is connected to
@@ -126,27 +99,22 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         print("Discovered charactertistics")
         let characteristics = didDiscoverCharacteristicsFor.characteristics!
         for characteristic in characteristics {
-            if characteristic.uuid == getFirstSeenCharacteristicUUID {
+            if characteristic.uuid == getInitialUserCharacteristicUUID {
                 peripheral.readValue(for: characteristic)
             }
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
         print("Discovered value")
-        usleep(1000000)
-        print("Discovered value again!")
         
-        if didUpdateValueFor.uuid == getFirstSeenCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
-            var usr = central_man.peripheralUsers[peripheral]!
-            let value = didUpdateValueFor.value! as NSData // data type, have to convert to int
-            usr.firstSeen = value.bytes.load(as:Int64.self)
-            print("firstSeen for user \(usr.name) = \(usr.firstSeen)")
+        if didUpdateValueFor.uuid == getInitialUserCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
+            var usr = data_to_user(didUpdateValueFor.value! as NSData) // data type, have to convert to int
+            usr.peripheral = peripheral
+            print("Updated value for new connected user. Got user \(usr)")
+            
             firstSeenToUser[usr.firstSeen!] = usr
-            print("Starting to do appending")
             central_man.connectedUsers.append(usr)
-            print("Appended to connectedUsers")
             central_man.peripheralUsers[usr.peripheral!] = usr
-            print("Inserted into dictionary")
             allUsers.append(usr)
         }
         

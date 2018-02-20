@@ -27,13 +27,15 @@ let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00
 let messageWriteDirectCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
 let messageWriteOtherCharacteristicUUID = CBUUID(string: "6f083e6a-8a09-468f-898e-b16755a1bf61")
 let userReadCharacteristicUUID = CBUUID(string: "b8e0fee5-d132-4410-a09f-e584e64a115d")
-let getFirstSeenCharacteristicUUID = CBUUID(string: "7ade0d09-f195-4afe-b476-675ee4476ddf")
+let getInitialUserCharacteristicUUID = CBUUID(string: "7ade0d09-f195-4afe-b476-675ee4476ddf")
 
 // Initialize both Central and Peripheral
 
 let central_man = CentralMan()
 let periph_man = PeripheralMan()
 
+
+testUserData()
 var queue: DispatchQueue!
 if #available(OSX 10.10, *) {
     queue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)

@@ -5,13 +5,13 @@ struct user {
     let name: String // Name that they broadcast with
     var lastSeen: Int64
     var firstSeen: Int64? // same as before since they first came around. This is an identifier.
-    let peripheral: CBPeripheral?
+    var peripheral: CBPeripheral?
     
     
     init(name: String, firstSeen: Int64?, peripheral: CBPeripheral?) { // Names can only be 8 letters long
         self.firstSeen = firstSeen
         self.lastSeen = getTime()
-        self.name = String(name.prefix(8))
+        self.name = name
         self.peripheral = peripheral
     }
     
@@ -65,7 +65,7 @@ func data_to_user(_ data: NSData) -> user {
 }
 
 func testUserData(){
-    let testUser = user(name: "testUser", firstSeen: 12961, peripheral:nil)
+    let testUser = user(name: "testUser", firstSeen: getTime(), peripheral:nil)
     print("User originally: \(testUser)")
     let data = testUser.user_to_data()
     print("User -> Data: \(data)")
@@ -237,13 +237,13 @@ func start_advertising(_ periph_man: PeripheralMan!){
     
     let messageWriteDirectCharacteristic = CBMutableCharacteristic(type: messageWriteDirectCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let userReadCharacteristic = CBMutableCharacteristic(type: userReadCharacteristicUUID, properties: [.read], value: nil, permissions: [.readable])
-    let getFirstSeenCharacteristic = CBMutableCharacteristic(type: getFirstSeenCharacteristicUUID, properties: [.read], value: firstSeen, permissions: [.readable])
+    let getInitialUserCharacteristic = CBMutableCharacteristic(type: getInitialUserCharacteristicUUID, properties: [.read], value: firstSeen, permissions: [.readable])
     let messageWriteOtherCharacteristic = CBMutableCharacteristic(type: messageWriteOtherCharacteristicUUID, properties: [.write], value: nil, permissions: [.writeable])
     let identifierService = CBMutableService(type:identifierServiceUUID, primary:true)
     
     
-    identifierService.characteristics = [messageWriteDirectCharacteristic, userReadCharacteristic, getFirstSeenCharacteristic,messageWriteOtherCharacteristic] // The insight is that the characteristics are just headers
-    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]]
+    identifierService.characteristics = [messageWriteDirectCharacteristic, userReadCharacteristic, getInitialUserCharacteristic ,messageWriteOtherCharacteristic] // The insight is that the characteristics are just headers
+    let advertisementData: [String : Any] = [CBAdvertisementDataLocalNameKey : name.prefix(8),CBAdvertisementDataServiceUUIDsKey:[identifierServiceUUID]] // Name doesn't matter
     print("Advertising with data \(advertisementData)")
     if(periph_man.peripheralManager.state == .poweredOn) { //just prints out what state the peripheral is in, if it's not on something is probably going wrong
         if(!periph_man.peripheralManager.isAdvertising) {
