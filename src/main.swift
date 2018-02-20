@@ -20,7 +20,7 @@
  Then, when someone else polls you, you give them a list of all your users which has been updated. In this way, information propogates through the network at a minimum pace of 1s/node. Even if there are ten nodes in between two people, it should take only ten seconds before they see each other.
  */
 
-import Foundation
+import Foundation //useless comment
 import CoreBluetooth
 
 let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
