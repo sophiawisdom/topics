@@ -22,7 +22,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentral, didFailToConnect peripheral: CBPeripheral, error: Error?){
-        print("Failed to connect to peripheral \(peripheral) because of error \(error)")
+        print("Failed to connect to peripheral \(peripheral) because of error \(error!)")
     }
     
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
@@ -129,10 +129,12 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
         
         else if didUpdateValueFor.uuid == userReadCharacteristicUUID { // Sending us their user list to update
-            print("Getting user list")
+            print("Getting user list. Value is \(didUpdateValueFor.value)")
             let data = didUpdateValueFor.value! as NSData
             var users = [user]()
             var offset = 0
+            
+            print("About to start generating data")
             
             while (offset < data.length) {
                 let length = Int(data.bytes.load(fromByteOffset: offset, as:Int32.self))

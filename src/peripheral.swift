@@ -36,6 +36,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         if (characteristic.uuid == userReadCharacteristicUUID){
             print("Attempted to get update user list")
             let responseData = NSMutableData(length: 0)! // length=0 because we will be appending
+            
             for usr in allUsers {
                 print("In response to read request sent over user \(usr)")
                 let userData = usr.user_to_data()
@@ -43,10 +44,12 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
                 responseData.append(NSData(bytes: &userLength, length:4) as Data)
                 responseData.append(userData as Data)
             }
+            
             didReceiveRead.value = responseData as Data
+            print("Sent response to userRead: \(responseData)")
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
         }
-        else if (characteristic.uuid == getInitialUserCharacteristicUUID){
+        else if (characteristic.uuid == getInitialUserCharacteristicUUID) {
             
             didReceiveRead.value = selfUser.user_to_data() as Data
             print("Other user is attempting to read our firstSeen value. we are sending them back data: \(didReceiveRead.value!)")
@@ -71,21 +74,25 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
                 if msg.receivingUser == selfUser {
                     receiveMessage(msg)
                 }
+                    
                 else if msg.sendingUser == selfUser {
                     print("Received message sent by us. This is a bug and should not happen")
                 }
+                    
                 else { // Message sent by somebody else to somebody else - we should help route.
                     // Check if we've already seen the message
-                    let alreadySeen = recentMessages.contains(msg)
-                    if alreadySeen == true {
-                        peripheralManager.respond(to: request, withResult: CBATTError.Code.success) // Don't propogate the message any more
+                    
+                    if recentMessages.contains(msg) == true {
+                        peripheralManager.respond(to: request, withResult: CBATTError.Code.success) // Just do nothing
                     }
+                        
                     else {
                         recentMessages.insert(msg)
                         for user in central_man.connectedUsers {
                             let writeCharacteristic = getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
                             user.peripheral!.writeValue(msg.message_to_data() as Data, for: writeCharacteristic, type: CBCharacteristicWriteType.withResponse)
                         }
+                        peripheralManager.respond(to: request, withResult: CBATTError.Code.success)
                     }
                 }
             }
