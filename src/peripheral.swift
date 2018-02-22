@@ -38,11 +38,11 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
             let responseData = NSMutableData(length: 0)! // length=0 because we will be appending
             
             for usr in allUsers {
-                print("In response to read request sent over user \(usr)")
                 let userData = usr.user_to_data()
                 var userLength = Int32(userData.length) // var so we can reference memory location
                 responseData.append(NSData(bytes: &userLength, length:4) as Data)
                 responseData.append(userData as Data)
+                print("Sent over user \(usr) with length \(userLength)")
             }
             
             didReceiveRead.value = responseData as Data

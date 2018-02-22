@@ -10,7 +10,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     var peripheralUsers = [CBPeripheral: user]()
     let messageServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
     let messageCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
-    var knownPeripherals = [CBPeripheral]()
+    var knownPeripherals: Set<CBPeripheral> = []
     
     override init() {
         super.init()
@@ -27,6 +27,10 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
     
     func centralManager(_: CBCentralManager, didDiscover: CBPeripheral, advertisementData: [String : Any], rssi: NSNumber){ // Receives result of peripheral scan
         // We've found a peripheral; should we connect?
+        if knownPeripherals.contains(didDiscover){
+            print("Found peripheral we've already connected to")
+            return
+        }
         var should_connect = false
         if let UUID = advertisementData[CBAdvertisementDataServiceUUIDsKey] { // if this key exists
             switch UUID {
@@ -63,7 +67,7 @@ class CentralMan: NSObject, CBCentralManagerDelegate {
         didDiscover.delegate = del
         centralManager.connect(didDiscover, options: nil) // User object is transferred as a whole, not attempted to be inferred.
         print("Finished function")
-        knownPeripherals.append(didDiscover)
+        knownPeripherals.insert(didDiscover)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect: CBPeripheral) { // When someone is connected to
@@ -114,7 +118,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
-        if (didUpdateValueFor.value == nil){
+        if (didUpdateValueFor.value == nil) {
             print("Received updated value for characteristic \(didUpdateValueFor.uuid) without any data")
             return
         }
