@@ -286,6 +286,8 @@ func receiveMessage(_ msg: message){
     
     if (msg.receivingUser == selfUser) {
         print("\(msg.sendingUser.name): \(msg.messageText)") // more processing later
+        chatHistory[msg.sendingUser]!.append(msg)
+        print("chatHistory is: \(chatHistory)")
         return
     }
     else {
@@ -295,10 +297,9 @@ func receiveMessage(_ msg: message){
 }
 
 func discoverUser(_ usr: user){
-    
 }
 
-let chatHistory = [user:[message]]()
+var chatHistory = [user:[message]]()
 let name = Host.current().localizedName ?? ""
 let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
 var allUsers = [user]()
