@@ -298,7 +298,7 @@ func discoverUser(_ usr: user){
     
 }
 
-let chatHistory = [user:[message]()]()
+let chatHistory = [user:[message]]()
 let name = Host.current().localizedName ?? ""
 let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
 var allUsers = [user]()
