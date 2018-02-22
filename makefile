@@ -28,3 +28,6 @@ build:
 
 static:
 	$(SWIFTC) $(SWIFT_FILES) -static-stdlib -emit-executable -sdk $(SDK_PATH) -o $(ROOT_DIR)/$(FILE)
+update:
+	make static
+	scp topics wisdomw18@10.0.20.40:topics.out

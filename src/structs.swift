@@ -4,11 +4,11 @@ import CoreBluetooth
 struct user {
     let name: String // Name that they broadcast with
     var lastSeen: Int64
-    var firstSeen: Int64? // same as before since they first came around. This is an identifier.
+    var firstSeen: Double? // Change first seen to globally unique identifier
     var peripheral: CBPeripheral?
     
     
-    init(name: String, firstSeen: Int64?, peripheral: CBPeripheral?) { // Names can only be 8 letters long
+    init(name: String, firstSeen: Double?, peripheral: CBPeripheral?) { // Names can only be 8 letters long
         self.firstSeen = firstSeen
         self.lastSeen = getTime()
         self.name = name
@@ -29,7 +29,7 @@ struct user {
 }
 
 func getTime() -> Int64 {
-    return Int64(NSDate().timeIntervalSince1970 * 1000)
+    return NSDate().timeIntervalSince1970
 }
 
 extension user: Hashable {
@@ -56,7 +56,7 @@ extension user: Hashable {
 }
 
 func data_to_user(_ data: NSData) -> user {
-    let firstSeen = data.bytes.load(as:Int64.self)
+    let firstSeen = data.bytes.load(as:Double.self)
 
     let range = NSMakeRange(8,data.length-8)
     let name = String(data: data.subdata(with: range), encoding: .utf8)!
@@ -77,13 +77,13 @@ struct message {
     let sendingUser: user
     let receivingUser: user
     let messageText: String // Every text component can be of unlimited length (other than bluetooth limits).
-    let timeSent: Int64 // timestamp since epoch in milliseconds
+    let timeSent: Double // timestamp since epoch in milliseconds
     func message_to_data() -> NSData { // This probably causes a memory leak because I don't know how pointers work
         let messageData = NSMutableData(length: 0)! // Length initialized at 0 because appending is easy
         
-        var timeSentInt = Int64(timeSent) // Needed for pointer math
-        let timeSentIntData = NSData(bytes: &timeSentInt, length: 8) // int64 take 8 bytes
-        messageData.append(timeSentIntData as Data)
+        var timeSentDbl = Double(timeSent) // Needed for pointer math
+        let timeSentDblData = NSData(bytes: &timeSentInt, length: 8) // int64 take 8 bytes
+        messageData.append(timeSentDblData as Data)
         
         
         // Append string lengths
@@ -175,7 +175,6 @@ func send_message(_ otherUser:user,messageText:String){
     let characteristic = getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
     
     otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
-    
 }
 
 func updateUserList(){ // Separate thread that runs and tries to continuously update
@@ -184,15 +183,11 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
     while (true){
         
         for usr in central_man.connectedUsers { // for each peripheral connected to
-            if (usr.firstSeen == 0){
-                usleep(100000)
-                continue
-            }
             
 //            print("Just started updateUserList loop for user \(user.firstSeen)")
             
             if let lastAskedUser = lastAsked[usr] {
-                if (lastAskedUser - getTime()) < 1000 {
+                if (lastAskedUser - getTime()) < 1 {
                     continue
                 }
             }
@@ -287,7 +282,6 @@ func makeDummyUser() -> user{ // for testing purposes
     return usr
 }
 
-
 func receiveMessage(_ msg: message){
     
     if (msg.receivingUser == selfUser) {
@@ -300,8 +294,13 @@ func receiveMessage(_ msg: message){
     }
 }
 
+func discoverUser(_ usr: user){
+    
+}
+
+let chatHistory = [user:[message]()]()
 let name = Host.current().localizedName ?? ""
 let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
 var allUsers = [user]()
-var firstSeenToUser = [Int64: user]()
+var firstSeenToUser = [Double: user]()
 var recentMessages: Set<message> = []

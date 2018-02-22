@@ -129,7 +129,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
         
         else if didUpdateValueFor.uuid == userReadCharacteristicUUID { // Sending us their user list to update
-            print("Getting user list. Value is \(didUpdateValueFor.value)")
+            print("Getting user list. Value is \(didUpdateValueFor.value!)")
             let data = didUpdateValueFor.value! as NSData
             var users = [user]()
             var offset = 0
