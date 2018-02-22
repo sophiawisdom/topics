@@ -338,13 +338,13 @@ func getHardwareUUID() throws -> String {
         return str
     }
     else {
-        throw
+        throw getUUIDError
     }
     print("Attempting to get uuidString")
     return uuidStringRef! as String // Let it error out I guess
 }
 
-func getSystemSerialNumber(inout uuid: String) -> Bool {
+/*func getSystemSerialNumber(inout uuid: String) -> Bool {
     
     var ioPlatformExpertDevice:             io_service_t?
     var serialNumber:                       CFTypeRef?
@@ -374,7 +374,7 @@ func getSystemSerialNumber(inout uuid: String) -> Bool {
     }
     
     return false
-}
+}*/
 
 enum messageSendError: Error {
     case notConnected
@@ -383,9 +383,7 @@ enum messageSendError: Error {
 }
 
 enum getUUIDError: Error {
-    case notConnected
-    case servicesNotFound
-    case unknownError
+    case hardwareError
 }
 
 var chatHistory = [user:[message]]()
