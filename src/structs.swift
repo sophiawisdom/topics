@@ -39,7 +39,7 @@ extension user: Hashable {
             return name.hashValue
         }
         else {
-            return name.hashValue + firstSeen!.hashValue
+            return name.hashValue ^ firstSeen!.hashValue
         }
     }
     
@@ -286,7 +286,12 @@ func receiveMessage(_ msg: message){
     
     if (msg.receivingUser == selfUser) {
         print("\(msg.sendingUser.name): \(msg.messageText)") // more processing later
-        chatHistory[msg.sendingUser]!.append(msg)
+        if var arr = chatHistory[msg.sendingUser] {
+            arr.append(msg)
+        }
+        else {
+            chatHistory[msg.sendingUser] = [msg]
+        }
         print("chatHistory is: \(chatHistory)")
         return
     }
@@ -297,6 +302,48 @@ func receiveMessage(_ msg: message){
 }
 
 func discoverUser(_ usr: user){
+}
+
+func getHardwareUUID() -> String {
+    
+    var uuidRef:        CFUUID?
+    var uuidStringRef:  CFString?
+    var uuidBytes:      [CUnsignedChar] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    
+    var ts = timespec(tv_sec: 0,tv_nsec: 0)
+    
+    gethostuuid(&uuidBytes, &ts)
+    
+    uuidRef = CFUUIDCreateWithBytes(
+        kCFAllocatorDefault,
+        uuidBytes[0],
+        uuidBytes[1],
+        uuidBytes[2],
+        uuidBytes[3],
+        uuidBytes[4],
+        uuidBytes[5],
+        uuidBytes[6],
+        uuidBytes[7],
+        uuidBytes[8],
+        uuidBytes[9],
+        uuidBytes[10],
+        uuidBytes[11],
+        uuidBytes[12],
+        uuidBytes[13],
+        uuidBytes[14],
+        uuidBytes[15]
+    )
+    
+    uuidBytes = []
+    
+    uuidStringRef = CFUUIDCreateString(kCFAllocatorDefault, uuidRef)
+    
+    if (uuidRef != nil) {
+        uuidRef = nil
+    }
+    
+    print("Attempting to get uuidString")
+    return uuidStringRef! as String // Let it error out I guess
 }
 
 var chatHistory = [user:[message]]()

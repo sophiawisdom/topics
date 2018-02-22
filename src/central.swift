@@ -114,10 +114,12 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor: CBCharacteristic, error: Error?) {
-        print("Discovered value for characteristic \(didUpdateValueFor)")
+        if (didUpdateValueFor.value == nil){
+            print("Received updated value for characteristic \(didUpdateValueFor.uuid) without any data")
+            return
+        }
         
         if didUpdateValueFor.uuid == getInitialUserCharacteristicUUID { // This should happen more or less immediately, or at least as soon as possible.
-            print("data: \(didUpdateValueFor.value! as NSData)")
             var usr = data_to_user(didUpdateValueFor.value! as NSData) // data type, have to convert to int
             usr.peripheral = peripheral
             print("Updated value for new connected user. Got user \(usr)")

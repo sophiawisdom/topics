@@ -23,6 +23,11 @@
 import Foundation //useless comment
 import CoreBluetooth
 
+
+let hardwareUUID = getHardwareUUID()
+print("String \(hardwareUUID) has length \(hardwareUUID.utf8.count)")
+
+
 let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
 let messageWriteDirectCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
 let messageWriteOtherCharacteristicUUID = CBUUID(string: "6f083e6a-8a09-468f-898e-b16755a1bf61")
