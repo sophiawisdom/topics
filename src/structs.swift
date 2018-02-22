@@ -3,7 +3,7 @@ import CoreBluetooth
 
 struct user {
     let name: String // Name that they broadcast with
-    var lastSeen: Int64
+    var lastSeen: Double
     var firstSeen: Double? // Change first seen to globally unique identifier
     var peripheral: CBPeripheral?
     
@@ -28,7 +28,7 @@ struct user {
     }
 }
 
-func getTime() -> Int64 {
+func getTime() -> Double {
     return NSDate().timeIntervalSince1970
 }
 
@@ -82,7 +82,7 @@ struct message {
         let messageData = NSMutableData(length: 0)! // Length initialized at 0 because appending is easy
         
         var timeSentDbl = Double(timeSent) // Needed for pointer math
-        let timeSentDblData = NSData(bytes: &timeSentInt, length: 8) // int64 take 8 bytes
+        let timeSentDblData = NSData(bytes: &timeSentDbl, length: 8) // Double take 8 bytes
         messageData.append(timeSentDblData as Data)
         
         
@@ -124,7 +124,7 @@ extension message: Hashable {
 func data_to_message(_ data: NSData) -> message {
     let bytes = data.bytes
     
-    let timeSentInt = bytes.load(as:Int64.self)
+    let timeSentDbl = bytes.load(as:Double.self)
     
     let sendLen = Int(bytes.load(fromByteOffset: 8,  as:Int32.self))
     let recvLen = Int(bytes.load(fromByteOffset: 12, as:Int32.self))
@@ -138,7 +138,7 @@ func data_to_message(_ data: NSData) -> message {
     range = NSMakeRange(20+sendLen+recvLen,msgIndex)
     let messageText = String(data: data.subdata(with: range), encoding: .utf8)!
     
-    return message(sendingUser: sendingUser, receivingUser: receivingUser, messageText: messageText, timeSent: timeSentInt)
+    return message(sendingUser: sendingUser, receivingUser: receivingUser, messageText: messageText, timeSent: timeSentDbl)
     
 }
 
@@ -179,7 +179,7 @@ func send_message(_ otherUser:user,messageText:String){
 
 func updateUserList(){ // Separate thread that runs and tries to continuously update
     print("update_user_list called")
-    var lastAsked = [user: Int64]() // don't ask more than every 10 seconds
+    var lastAsked = [user: Double]() // don't ask more than every 10 seconds
     while (true){
         
         for usr in central_man.connectedUsers { // for each peripheral connected to

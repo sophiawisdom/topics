@@ -127,7 +127,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             central_man.peripheralUsers[usr.peripheral!] = usr
             allUsers.append(usr)
         }
-        
+    
         else if didUpdateValueFor.uuid == userReadCharacteristicUUID { // Sending us their user list to update
             print("Getting user list. Value is \(didUpdateValueFor.value!)")
             let data = didUpdateValueFor.value! as NSData
