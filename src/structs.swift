@@ -4,12 +4,12 @@ import CoreBluetooth
 struct user {
     let name: String // Name that they broadcast with
     var lastSeen: Double
-    var firstSeen: Double? // Change first seen to globally unique identifier
+    var identifier: String // Change first seen to globally unique identifier
     var peripheral: CBPeripheral?
     
     
-    init(name: String, firstSeen: Double?, peripheral: CBPeripheral?) { // Names can only be 8 letters long
-        self.firstSeen = firstSeen
+    init(name: String, identifier: String, peripheral: CBPeripheral?) { // Names can only be 8 letters long
+        self.identifier = identifier
         self.lastSeen = getTime()
         self.name = name
         self.peripheral = peripheral
@@ -18,10 +18,7 @@ struct user {
     func user_to_data() -> NSData {
         let messageData = NSMutableData(length: 0)!
         
-        var firstSeenNum = firstSeen
-        let firstSeenData = NSData(bytes: &firstSeenNum, length:8)
-        messageData.append(firstSeenData as Data)
-        
+        messageData.append(identifier.data(using: .utf8)!)
         messageData.append(name.data(using: .utf8)!)
         
         return messageData
@@ -35,37 +32,27 @@ func getTime() -> Double {
 extension user: Hashable {
     
     var hashValue: Int {
-        if (firstSeen == nil){
-            return name.hashValue
-        }
-        else {
-            return name.hashValue ^ firstSeen!.hashValue
-        }
+        return name.hashValue ^ identifier.hashValue // Originally this was + instead of ^, but this can lead to an overflow if both numbers are large
     }
     
     static func == (first: user, second: user) -> Bool {
-        
-        if (first.firstSeen == nil || second.firstSeen == nil){
-            return (first.name == second.name)
-        }
-            
-        else{
-            return (first.name == second.name) && (first.firstSeen! == second.firstSeen!)
-        }
+            return (first.name == second.name) && (first.identifier == second.identifier)
     }
 }
 
 func data_to_user(_ data: NSData) -> user {
-    let firstSeen = data.bytes.load(as:Double.self)
-
-    let range = NSMakeRange(8,data.length-8)
-    let name = String(data: data.subdata(with: range), encoding: .utf8)!
     
-    return user(name:name,firstSeen: firstSeen ,peripheral: nil)
+    let rangeIdentifier = NSMakeRange(0,36)
+    let identifier = String(data: data.subdata(with: rangeIdentifier), encoding: .utf8)!
+    
+    let rangeName = NSMakeRange(36,data.length-36)
+    let name = String(data: data.subdata(with: rangeName), encoding: .utf8)!
+    
+    return user(name:name,identifier: identifier ,peripheral: nil)
 }
 
 func testUserData(){
-    let testUser = user(name: "testUser", firstSeen: getTime(), peripheral:nil)
+    let testUser = user(name: "testUser", identifier: getHardwareUUID(), peripheral:nil)
     print("User originally: \(testUser)")
     let data = testUser.user_to_data()
     print("User -> Data: \(data)")
@@ -142,7 +129,7 @@ func data_to_message(_ data: NSData) -> message {
     
 }
 
-func getCharacteristic(_ peripheral:CBPeripheral, characteristicUUID: CBUUID) -> CBCharacteristic {
+func getCharacteristic(_ peripheral:CBPeripheral, characteristicUUID: CBUUID) throws -> CBCharacteristic {
     var writeCharacteristic: CBCharacteristic!
     var service_to_write: CBService! // To find the write characteristic you have to find the service
     for service in peripheral.services! {
@@ -152,7 +139,7 @@ func getCharacteristic(_ peripheral:CBPeripheral, characteristicUUID: CBUUID) ->
     }
     if (service_to_write == nil){ // didn't find one
         print("Not able to find message service")
-        return writeCharacteristic
+        throw(messageSendError.servicesNotFound)
     }
     
     for characteristic in service_to_write.characteristics! {
@@ -163,19 +150,27 @@ func getCharacteristic(_ peripheral:CBPeripheral, characteristicUUID: CBUUID) ->
     return writeCharacteristic
 }
 
-func send_message(_ otherUser:user,messageText:String){
+func sendMessage(_ otherUser:user,messageText:String) throws {
     let msg = message(sendingUser:selfUser,receivingUser:otherUser,messageText:messageText,timeSent:getTime())
     if (otherUser.peripheral == nil) { // Have to route message to them instead of direct send
         print("You tried to send a message to \(otherUser) but they have no peripheral. This probably means they are a user we are connected through by an intermediary. Messaging is not implemented yet.")
         for user in central_man.connectedUsers {
-            let characteristic = getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
-            user.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+            do {
+                let characteristic = try getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
+                user.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+            }
+            catch {}
         }
     }
     else {
-        let characteristic = getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
+        do {
+            let characteristic = try getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
+            otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+        }
+        catch {
+            throw(messageSendError.notConnected)
+        }
         
-        otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
     }
 }
 
@@ -186,7 +181,7 @@ func updateUserList(){ // Separate thread that runs and tries to continuously up
         
         for usr in central_man.connectedUsers { // for each peripheral connected to
             
-//            print("Just started updateUserList loop for user \(user.firstSeen)")
+//            print("Just started updateUserList loop for user \(usr)")
             
             if let lastAskedUser = lastAsked[usr] {
                 if (lastAskedUser - getTime()) < 1 {
@@ -277,9 +272,9 @@ func randomString(length: Int) -> String {
 
 func makeDummyUser() -> user{ // for testing purposes
     let name = randomString(length: 10)
-    let usr = user(name:name, firstSeen:getTime(), peripheral:nil)
+    let usr = user(name:name, identifier:getHardwareUUID(), peripheral:nil)
     allUsers.append(usr)
-    firstSeenToUser[usr.firstSeen!] = usr
+    identifierToUser[usr.identifier] = usr
     print("Generated dummy user \(usr)")
     return usr
 }
@@ -347,9 +342,15 @@ func getHardwareUUID() -> String {
     return uuidStringRef! as String // Let it error out I guess
 }
 
+enum messageSendError: Error {
+    case notConnected
+    case servicesNotFound
+    case unknownError
+}
+
 var chatHistory = [user:[message]]()
 let name = Host.current().localizedName ?? ""
-let selfUser = user(name: name, firstSeen: getTime(), peripheral: nil)
+let selfUser = user(name: name, identifier: getHardwareUUID(), peripheral: nil)
 var allUsers = [user]()
-var firstSeenToUser = [Double: user]()
+var identifierToUser = [String: user]()
 var recentMessages: Set<message> = []

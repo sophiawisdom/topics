@@ -53,7 +53,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         else if (characteristic.uuid == getInitialUserCharacteristicUUID) {
             
             didReceiveRead.value = selfUser.user_to_data() as Data
-            print("Other user is attempting to read our firstSeen value. we are sending them back data: \(didReceiveRead.value!)")
+            print("We are being asked for our user data. We are responding with \(didReceiveRead.value! as NSData)")
             
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
         }
@@ -90,10 +90,18 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
                     else {
                         recentMessages.insert(msg)
                         for user in central_man.connectedUsers {
-                            let writeCharacteristic = getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
-                            user.peripheral!.writeValue(msg.message_to_data() as Data, for: writeCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                            if (user.peripheral!.state != .connected){
+                                continue // This gets most disconnections, but it won't get it sometimes
+                            }
+                            do {
+                                let writeCharacteristic = try getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
+                                user.peripheral!.writeValue(msg.message_to_data() as Data, for: writeCharacteristic, type: CBCharacteristicWriteType.withResponse)
+                                peripheralManager.respond(to: request, withResult: CBATTError.Code.success)
+                            }
+                            catch { //
+                                print("messageSendError when trying to propogate")
+                            }
                         }
-                        peripheralManager.respond(to: request, withResult: CBATTError.Code.success)
                     }
                 }
             }

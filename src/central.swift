@@ -124,7 +124,7 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             usr.peripheral = peripheral
             print("Updated value for new connected user. Got user \(usr)")
             
-            firstSeenToUser[usr.firstSeen!] = usr
+            identifierToUser[usr.identifier] = usr
             central_man.connectedUsers.append(usr)
             central_man.peripheralUsers[usr.peripheral!] = usr
             allUsers.append(usr)
@@ -149,10 +149,10 @@ class PeripheralDelegate: NSObject, CBCentralManagerDelegate, CBPeripheralDelega
             }
             
             for usr in users {
-                var otherUser = firstSeenToUser[usr.firstSeen!]
+                var otherUser = identifierToUser[usr.identifier]
                 if (otherUser == nil) {
                     print("Found new user \(usr)")
-                    firstSeenToUser[usr.firstSeen!] = usr
+                    identifierToUser[usr.identifier] = usr
                     allUsers.append(usr)
                 }
                 else {

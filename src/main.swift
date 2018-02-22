@@ -27,7 +27,7 @@ import CoreBluetooth
 let hardwareUUID = getHardwareUUID()
 print("String \(hardwareUUID) has length \(hardwareUUID.utf8.count)")
 
-
+testUserData()
 let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")
 let messageWriteDirectCharacteristicUUID = CBUUID(string: "fc36344b-bcda-40ca-b118-666ec767ab20")
 let messageWriteOtherCharacteristicUUID = CBUUID(string: "6f083e6a-8a09-468f-898e-b16755a1bf61")
@@ -113,7 +113,14 @@ let usr5 = makeDummyUser()
         if(receivingUser.peripheral!.state != .connected) {
             break
         }
+        print("state is \(receivingUser.peripheral!.state == .connected)")
         print("Sending message \(toSend) to peripheral \(receivingUser.name)")
-        send_message(receivingUser, messageText: toSend)
+        do {
+            try sendMessage(receivingUser, messageText: toSend)
+        }
+        catch is messageSendError {
+            print("Unable to send message, likely due to cnnection issues. Removing this user from the queue")
+            central_man.connectedUsers.remove(at:0) // Automatically gets the first available user
+        }
     }
 }
