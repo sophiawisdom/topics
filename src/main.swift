@@ -98,18 +98,22 @@ let usr4 = makeDummyUser()
 usleep(1000)
 let usr5 = makeDummyUser()
 
-print("Waiting for users to connect.")
-while (central_man.connectedUsers.count == 0){
-    usleep(100000)
-}
-print("Found a user to connect to")
 
-let receivingUser = central_man.connectedUsers[0]
-print("Found user to connect to! Now sending text to \(receivingUser)")
-
-var toSend: String
-while (true){
-    toSend = readLine()!
-    print("Sending message \(toSend) to peripheral \(receivingUser.name)")
-    send_message(receivingUser, messageText: toSend)
+ while(true) {
+    print("Waiting for users to connect.")
+    while (central_man.connectedUsers.count == 0){
+        usleep(100000)
+    }
+    print("Found a user to connect to")
+    let receivingUser = central_man.connectedUsers[0]
+    print("Found user to connect to! Now sending text to \(receivingUser)")
+    var toSend: String
+    while (true){
+        toSend = readLine()!
+        if(receivingUser.peripheral!.state != .connected) {
+            break
+        }
+        print("Sending message \(toSend) to peripheral \(receivingUser.name)")
+        send_message(receivingUser, messageText: toSend)
+    }
 }

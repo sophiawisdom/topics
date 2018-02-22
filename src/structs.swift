@@ -172,9 +172,11 @@ func send_message(_ otherUser:user,messageText:String){
             user.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
         }
     }
-    let characteristic = getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
-    
-    otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+    else {
+        let characteristic = getCharacteristic(otherUser.peripheral!, characteristicUUID: messageWriteDirectCharacteristicUUID)
+        
+        otherUser.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+    }
 }
 
 func updateUserList(){ // Separate thread that runs and tries to continuously update
@@ -286,13 +288,12 @@ func receiveMessage(_ msg: message){
     
     if (msg.receivingUser == selfUser) {
         print("\(msg.sendingUser.name): \(msg.messageText)") // more processing later
-        if var arr = chatHistory[msg.sendingUser] {
-            arr.append(msg)
+        if chatHistory[msg.sendingUser] != nil {
+            chatHistory[msg.sendingUser]!.append(msg)
         }
         else {
             chatHistory[msg.sendingUser] = [msg]
         }
-        print("chatHistory is: \(chatHistory)")
         return
     }
     else {
