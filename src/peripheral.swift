@@ -48,6 +48,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
             didReceiveRead.value = responseData as Data
             print("Sent response to userRead: \(responseData)")
             peripheralManager.respond(to: didReceiveRead, withResult: CBATTError.Code.success)
+            print("userRead success")
         }
         else if (characteristic.uuid == getInitialUserCharacteristicUUID) {
             
