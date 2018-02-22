@@ -4,7 +4,7 @@ import CoreBluetooth
 struct user {
     let name: String // Name that they broadcast with
     var lastSeen: Double
-    var identifier: String // Change first seen to globally unique identifier
+    var identifier: String
     var peripheral: CBPeripheral?
     
     
@@ -159,7 +159,7 @@ func sendMessage(_ otherUser:user,messageText:String) throws {
                 let characteristic = try getCharacteristic(user.peripheral!, characteristicUUID: messageWriteOtherCharacteristicUUID)
                 user.peripheral!.writeValue(msg.message_to_data() as Data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
             }
-            catch {}
+            catch {} // Do nothing if getting the characteristic fails because we just send it to other users
         }
     }
     else {
@@ -300,7 +300,7 @@ func receiveMessage(_ msg: message){
 func discoverUser(_ usr: user){
 }
 
-func getHardwareUUID() -> String {
+func getHardwareUUID() throws -> String {
     
     var uuidRef:        CFUUID?
     var uuidStringRef:  CFString?
@@ -334,15 +334,55 @@ func getHardwareUUID() -> String {
     
     uuidStringRef = CFUUIDCreateString(kCFAllocatorDefault, uuidRef)
     
-    if (uuidRef != nil) {
-        uuidRef = nil
+    if let str = uuidStringRef! as String {
+        return str
     }
-    
+    else {
+        throw
+    }
     print("Attempting to get uuidString")
     return uuidStringRef! as String // Let it error out I guess
 }
 
+func getSystemSerialNumber(inout uuid: String) -> Bool {
+    
+    var ioPlatformExpertDevice:             io_service_t?
+    var serialNumber:                       CFTypeRef?
+    
+    
+    ioPlatformExpertDevice = IOServiceGetMatchingService(
+        kIOMasterPortDefault,
+        IOServiceMatching("IOPlatformExpertDevice").takeUnretainedValue()
+    )
+    
+    if (ioPlatformExpertDevice != nil) {
+        
+        serialNumber = IORegistryEntryCreateCFProperty(
+            ioPlatformExpertDevice!,
+            "IOPlatformSerialNumber", // println(kIOPlatformSerialNumberKey);
+            kCFAllocatorDefault,
+            0
+            ).takeRetainedValue()
+        println(serialNumber);
+    }
+    
+    IOObjectRelease(ioPlatformExpertDevice!)
+    
+    if (serialNumber != nil) {
+        uuid = serialNumber! as NSString
+        return true
+    }
+    
+    return false
+}
+
 enum messageSendError: Error {
+    case notConnected
+    case servicesNotFound
+    case unknownError
+}
+
+enum getUUIDError: Error {
     case notConnected
     case servicesNotFound
     case unknownError
