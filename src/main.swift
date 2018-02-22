@@ -23,9 +23,15 @@
 import Foundation //useless comment
 import CoreBluetooth
 
+var selfUUID: String
 
-let hardwareUUID = getHardwareUUID()
-print("String \(hardwareUUID) has length \(hardwareUUID.utf8.count)")
+do {
+    selfUUID = try getHardwareUUID()
+}
+catch {
+    selfUUID = getRandUUID()
+}
+print("String \(selfUUID) has length \(selfUUID.utf8.count)")
 
 testUserData()
 let identifierServiceUUID = CBUUID(string: "b839e0d3-de74-4493-860b-00600deb5e00")

@@ -52,7 +52,7 @@ func data_to_user(_ data: NSData) -> user {
 }
 
 func testUserData(){
-    let testUser = user(name: "testUser", identifier: getHardwareUUID(), peripheral:nil)
+    let testUser = user(name: "testUser", identifier: getRandUUID(), peripheral:nil)
     print("User originally: \(testUser)")
     let data = testUser.user_to_data()
     print("User -> Data: \(data)")
@@ -272,7 +272,7 @@ func randomString(length: Int) -> String {
 
 func makeDummyUser() -> user{ // for testing purposes
     let name = randomString(length: 10)
-    let usr = user(name:name, identifier:getHardwareUUID(), peripheral:nil)
+    let usr = user(name:name, identifier:getRandUUID(), peripheral:nil)
     allUsers.append(usr)
     identifierToUser[usr.identifier] = usr
     print("Generated dummy user \(usr)")
@@ -334,14 +334,12 @@ func getHardwareUUID() throws -> String {
     
     uuidStringRef = CFUUIDCreateString(kCFAllocatorDefault, uuidRef)
     
-    if let str = uuidStringRef! as String {
-        return str
+    if let str = uuidStringRef {
+        return (str as String)
     }
     else {
-        throw getUUIDError
+        throw getUUIDError.hardwareError
     }
-    print("Attempting to get uuidString")
-    return uuidStringRef! as String // Let it error out I guess
 }
 
 /*func getSystemSerialNumber(inout uuid: String) -> Bool {
@@ -376,6 +374,20 @@ func getHardwareUUID() throws -> String {
     return false
 }*/
 
+func getRandUUID() -> String {
+    
+    var uuidRef:        CFUUID?
+    var uuidStringRef:  CFString?
+    
+    uuidRef         = CFUUIDCreate(kCFAllocatorDefault)
+    uuidStringRef   = CFUUIDCreateString(kCFAllocatorDefault, uuidRef)
+    
+    if (uuidRef != nil) {
+        uuidRef = nil
+    }
+    return uuidStringRef! as String
+}
+
 enum messageSendError: Error {
     case notConnected
     case servicesNotFound
@@ -384,11 +396,12 @@ enum messageSendError: Error {
 
 enum getUUIDError: Error {
     case hardwareError
+    case otherError
 }
 
 var chatHistory = [user:[message]]()
 let name = Host.current().localizedName ?? ""
-let selfUser = user(name: name, identifier: getHardwareUUID(), peripheral: nil)
+let selfUser = user(name: name, identifier: selfUUID, peripheral: nil)
 var allUsers = [user]()
 var identifierToUser = [String: user]()
 var recentMessages: Set<message> = []
