@@ -31,6 +31,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
         print("service: \(service)")
     }
     func peripheralManager(_: CBPeripheralManager, didReceiveRead: CBATTRequest){
+        print("maximumUpdateValueLength is \(didReceiveRead.central.maximumUpdateValueLength)")
         let characteristic = didReceiveRead.characteristic
         print("Received read: \(didReceiveRead)")
         if (characteristic.uuid == userReadCharacteristicUUID){
@@ -64,6 +65,7 @@ class PeripheralMan: NSObject, CBPeripheralManagerDelegate {
     }
     
     func peripheralManager(_: CBPeripheralManager, didReceiveWrite: [CBATTRequest]) { // In respond to write request
+        print("maximumUpdateValueLength is \(didReceiveWrite[0].central.maximumUpdateValueLength)")
         for request in didReceiveWrite {
             if (request.characteristic.uuid == messageWriteDirectCharacteristicUUID) {
                 let msg = data_to_message(_: request.value! as NSData)
